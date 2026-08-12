@@ -1,0 +1,2172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>粤春考助手 - 广东春季高考备考平台</title>
+<style>
+:root {
+  --primary: #3b82f6;
+  --primary-light: #eff6ff;
+  --primary-dark: #1d4ed8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --text-light: #94a3b8;
+  --border: #e2e8f0;
+  --shadow: 0 1px 3px rgba(0,0,0,.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --nav-height: 60px;
+  --header-height: 50px;
+  --transition: .25s ease;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;max-width:480px;margin:0 auto;min-height:100vh;position:relative;overflow-x:hidden}
+body::after{content:"";position:fixed;top:0;left:50%;transform:translateX(-50%);width:480px;height:100%;border-left:1px solid var(--border);border-right:1px solid var(--border);pointer-events:none;z-index:-1}
+
+/* Header */
+.header{position:sticky;top:0;z-index:100;background:var(--primary);color:#fff;height:var(--header-height);display:flex;align-items:center;padding:0 16px;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.header-title{font-size:17px;font-weight:600}
+.header-back{display:flex;align-items:center;gap:4px;cursor:pointer;font-size:15px;padding:4px 0}
+.header-action{font-size:14px;cursor:pointer;padding:4px 8px;border-radius:6px}
+.header-action:hover{background:rgba(255,255,255,.15)}
+
+/* Bottom Nav */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:480px;max-width:100%;height:var(--nav-height);background:var(--card);display:flex;border-top:1px solid var(--border);z-index:100;box-shadow:0 -1px 4px rgba(0,0,0,.05)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--text-light);font-size:11px;gap:2px;transition:var(--transition)}
+.nav-item.active{color:var(--primary)}
+.nav-item svg{width:22px;height:22px}
+
+/* Main Content */
+.main-content{padding:16px;padding-bottom:80px;min-height:calc(100vh - var(--header-height))}
+
+/* Cards */
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-title{font-size:16px;font-weight:600;margin-bottom:8px;color:var(--text)}
+.card-subtitle{font-size:13px;color:var(--text-secondary)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;border:none;transition:var(--transition);text-decoration:none}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{background:transparent;border:1.5px solid var(--primary);color:var(--primary)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-lg{padding:14px 28px;font-size:16px;width:100%}
+.btn-sm{padding:6px 14px;font-size:13px}
+.btn-block{width:100%}
+
+/* Form */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:14px;font-weight:500;margin-bottom:6px;color:var(--text)}
+.form-input,.form-select,.form-textarea{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;transition:var(--transition);background:var(--card);color:var(--text);font-family:inherit}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+.form-textarea{min-height:80px;resize:vertical}
+.form-row{display:flex;gap:12px}
+.form-row>*{flex:1}
+.form-hint{font-size:12px;color:var(--text-light);margin-top:4px}
+
+/* Tags & Badges */
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.tag-blue{background:var(--primary-light);color:var(--primary)}
+.tag-green{background:#ecfdf5;color:var(--success)}
+.tag-orange{background:#fffbeb;color:var(--warning)}
+.tag-red{background:#fef2f2;color:var(--danger)}
+.badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;font-size:11px;font-weight:600;background:var(--danger);color:#fff}
+
+/* Lists */
+.list-item{display:flex;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:var(--transition)}
+.list-item:last-child{border-bottom:none}
+.list-item:hover{background:var(--primary-light);margin:0 -16px;padding-left:16px;padding-right:16px;border-radius:var(--radius-sm)}
+.list-item-icon{width:40px;height:40px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:20px;margin-right:12px;flex-shrink:0}
+.list-item-content{flex:1;min-width:0}
+.list-item-title{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list-item-subtitle{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.list-item-arrow{color:var(--text-light);flex-shrink:0}
+
+/* Grid */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* Stat Cards */
+.stat-card{background:var(--card);border-radius:var(--radius);padding:14px;text-align:center;box-shadow:var(--shadow)}
+.stat-value{font-size:24px;font-weight:700;color:var(--primary)}
+.stat-label{font-size:12px;color:var(--text-secondary);margin-top:4px}
+
+/* Toast */
+.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:1000;background:#1e293b;color:#fff;padding:10px 24px;border-radius:20px;font-size:14px;animation:toastIn .3s ease;max-width:90%}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--card);border-radius:var(--radius);width:100%;max-width:400px;padding:24px;box-shadow:var(--shadow-lg)}
+.modal-title{font-size:17px;font-weight:600;margin-bottom:16px}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+
+/* Quiz */
+.quiz-option{padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;transition:var(--transition);display:flex;align-items:center;gap:10px}
+.quiz-option:hover{border-color:var(--primary);background:var(--primary-light)}
+.quiz-option.selected{border-color:var(--primary);background:var(--primary-light)}
+.quiz-option.correct{border-color:var(--success);background:#ecfdf5}
+.quiz-option.wrong{border-color:var(--danger);background:#fef2f2}
+.quiz-option-marker{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.quiz-option.selected .quiz-option-marker{border-color:var(--primary);background:var(--primary);color:#fff}
+.quiz-option.correct .quiz-option-marker{border-color:var(--success);background:var(--success);color:#fff}
+.quiz-option.wrong .quiz-option-marker{border-color:var(--danger);background:var(--danger);color:#fff}
+
+/* Timer */
+.timer-display{font-size:56px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:2px;color:var(--primary)}
+.timer-subject{text-align:center;font-size:18px;font-weight:500;margin-top:4px;color:var(--text-secondary)}
+.timer-warning .timer-display{color:var(--warning);animation:pulse 1s infinite}
+.timer-danger .timer-display{color:var(--danger);animation:pulse .5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px}
+.tab{padding:10px 16px;font-size:14px;cursor:pointer;color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-2px;transition:var(--transition);white-space:nowrap}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:500}
+
+/* Community */
+.post-card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.post-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.post-avatar{width:36px;height:36px;border-radius:50%;background:var(--primary-light);display:flex;align-items:center;justify-content:center;color:var(--primary);font-weight:600;font-size:15px}
+.post-author{font-size:14px;font-weight:500}
+.post-time{font-size:12px;color:var(--text-light)}
+.post-title{font-size:16px;font-weight:600;margin-bottom:6px}
+.post-content{font-size:14px;color:var(--text);line-height:1.7}
+.post-meta{display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--text-light)}
+
+/* Page transitions */
+.page{display:none}
+.page.active{display:block}
+
+/* Admin Sidebar */
+.admin-menu{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.admin-menu-item{background:var(--card);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;box-shadow:var(--shadow);transition:var(--transition);border:1.5px solid transparent}
+.admin-menu-item:hover{border-color:var(--primary);box-shadow:var(--shadow-lg)}
+.admin-menu-item-icon{font-size:28px;margin-bottom:8px}
+.admin-menu-item-title{font-size:14px;font-weight:500}
+
+/* Table */
+.data-table{width:100%;font-size:13px;border-collapse:collapse}
+.data-table th{text-align:left;padding:8px 6px;font-weight:600;border-bottom:2px solid var(--border);color:var(--text-secondary);font-size:12px}
+.data-table td{padding:8px 6px;border-bottom:1px solid var(--border)}
+.data-table tr:hover{background:var(--primary-light)}
+
+/* Chart bars */
+.chart-bar{height:8px;border-radius:4px;background:var(--border);overflow:hidden;margin-top:6px}
+.chart-bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+
+/* Loading */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--text-secondary)}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Search */
+.search-box{position:relative;margin-bottom:12px}
+.search-box input{width:100%;padding:10px 14px 10px 38px;border:1.5px solid var(--border);border-radius:24px;font-size:14px;background:var(--bg);transition:var(--transition)}
+.search-box input:focus{outline:none;border-color:var(--primary);background:var(--card)}
+.search-box svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-light)}
+
+/* Hero button */
+.hero-btn{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:18px 28px;border-radius:var(--radius);font-size:17px;font-weight:600;text-align:center;cursor:pointer;box-shadow:0 4px 16px rgba(59,130,246,.3);transition:var(--transition);border:none;width:100%;display:block}
+.hero-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(59,130,246,.4)}
+.hero-btn:active{transform:translateY(0)}
+
+/* Plan display */
+.plan-phase{background:var(--primary-light);border-left:4px solid var(--primary);padding:12px 16px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:12px}
+.plan-phase-title{font-size:15px;font-weight:600;color:var(--primary);margin-bottom:6px}
+.plan-phase-content{font-size:13px;color:var(--text);line-height:1.8}
+.plan-table{width:100%;font-size:13px;border-collapse:collapse;margin:8px 0}
+.plan-table td{padding:6px 4px;border:1px solid var(--border);font-size:12px}
+.plan-table td:first-child{font-weight:500;background:#f8fafc;width:30%}
+
+/* Empty state */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-light)}
+.empty-state-icon{font-size:48px;margin-bottom:12px}
+.empty-state-text{font-size:15px}
+
+/* Section */
+.section-title{font-size:16px;font-weight:600;margin:16px 0 10px;color:var(--text)}
+
+/* Filter row */
+.filter-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px}
+.filter-chip{padding:6px 14px;border-radius:20px;font-size:13px;white-space:nowrap;cursor:pointer;background:var(--bg);border:1.5px solid var(--border);transition:var(--transition)}
+.filter-chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+/* Rank list */
+.rank-item{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);gap:10px}
+.rank-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.rank-num.gold{background:#fef3c7;color:#d97706}
+.rank-num.silver{background:#f1f5f9;color:#64748b}
+.rank-num.bronze{background:#fef2f2;color:#dc2626}
+.rank-num.normal{background:var(--bg);color:var(--text-secondary)}
+
+/* Answer sheet */
+.answer-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.answer-dot{width:100%;aspect-ratio:1;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);transition:var(--transition)}
+.answer-dot.done{background:var(--primary);color:#fff;border-color:var(--primary)}
+.answer-dot.current{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+.answer-dot.correct-dot{background:var(--success);color:#fff;border-color:var(--success)}
+.answer-dot.wrong-dot{background:var(--danger);color:#fff;border-color:var(--danger)}
+
+/* Highlight card */
+.highlight-card{background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:var(--radius);padding:20px;margin-bottom:12px}
+.highlight-card h3{font-size:18px;font-weight:700;color:var(--primary-dark);margin-bottom:6px}
+.highlight-card p{font-size:14px;color:var(--text)}
+
+/* Lock screen overlay */
+.lock-overlay{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.lock-text{font-size:15px;color:var(--text-secondary);margin-top:16px;text-align:center}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* Login page */
+.login-container{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;padding:20px}
+.login-logo{font-size:48px;margin-bottom:12px}
+.login-title{font-size:24px;font-weight:700;color:var(--primary);margin-bottom:4px}
+.login-subtitle{font-size:14px;color:var(--text-secondary);margin-bottom:32px}
+
+/* Progress */
+.progress-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:var(--primary);transition:width .5s ease}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Header -->
+  <div class="header" id="header">
+    <div class="header-back" id="headerBack" onclick="goBack()" style="display:none">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      返回
+    </div>
+    <div class="header-title" id="headerTitle">粤春考助手</div>
+    <div class="header-action" id="headerAction" onclick="toggleAdmin()">管理</div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="mainContent"></div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav" id="bottomNav">
+    <div class="nav-item active" data-tab="home" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      首页
+    </div>
+    <div class="nav-item" data-tab="quiz" onclick="switchTab('quiz')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      刷题
+    </div>
+    <div class="nav-item" data-tab="errors" onclick="switchTab('errors')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      错题本
+    </div>
+    <div class="nav-item" data-tab="materials" onclick="switchTab('materials')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+      资料
+    </div>
+    <div class="nav-item" data-tab="community" onclick="switchTab('community')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      社区
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer"></div>
+
+<script>
+// ===== DATA STORE =====
+const DB = {
+  init() {
+    const defaults = {
+      user: { loggedIn: false, nickname: '备考学生' },
+      studyPlan: null,
+      questions: [],
+      errorBook: [],
+      favorites: [],
+      materials: [],
+      words: [],
+      templates: [],
+      scoreLines: [],
+      essayMaterials: [],
+      policies: [],
+      posts: [],
+      announcements: [
+        { title: '2027年广东春考时间节点提醒', content: '语文、数学、英语学考预计于2027年1月初举行，请同学们合理安排复习时间。', time: '2026-08-01' },
+        { title: '征集志愿补录通知', content: '2026年春考补录批次已于7月完成，请关注后续2027年补录时间节点。', time: '2026-07-15' },
+      ],
+      studyStats: {
+        totalQuestions: 0, correctQuestions: 0, subjectStats: { 语文: { total: 0, correct: 0 }, 数学: { total: 0, correct: 0 }, 英语: { total: 0, correct: 0 } },
+        streak: 0, lastStudyDate: null, wordProgress: { learned: 0, total: 350 }, mockExams: [],
+        studyTime: {},
+      },
+      admin: { username: 'admin', password: 'admin123' },
+    };
+    Object.entries(defaults).forEach(([k, v]) => {
+      if (!localStorage.getItem('yck_' + k)) localStorage.setItem('yck_' + k, JSON.stringify(v));
+    });
+    this._initQuestions();
+    this._initWords();
+    this._initTemplates();
+    this._initScoreLines();
+    this._initMaterials();
+    this._initEssayMaterials();
+    this._initPolicies();
+  },
+  get(k) { return JSON.parse(localStorage.getItem('yck_' + k) || 'null'); },
+  set(k, v) { localStorage.setItem('yck_' + k, JSON.stringify(v)); },
+
+  _initQuestions() {
+    if (this.get('questions')?.length) return;
+    const qs = [
+      { id: 1, subject: '数学', type: '单选', category: '函数', stem: '函数 f(x)=2x+1 在 x=1 处的值为？', options: ['A. 1', 'B. 2', 'C. 3', 'D. 4'], answer: 2, analysis: '将 x=1 代入 f(x)=2x+1，得 f(1)=2×1+1=3。' },
+      { id: 2, subject: '数学', type: '单选', category: '函数', stem: '下列函数中，是奇函数的是？', options: ['A. y=x²', 'B. y=x³', 'C. y=cosx', 'D. y=|x|'], answer: 1, analysis: '奇函数满足 f(-x)=-f(x)。y=x³ 满足条件，而 y=x² 是偶函数，y=cosx 是偶函数，y=|x| 是偶函数。' },
+      { id: 3, subject: '语文', type: '单选', category: '古诗文', stem: '"海内存知己，天涯若比邻"出自哪位诗人？', options: ['A. 李白', 'B. 杜甫', 'C. 王勃', 'D. 白居易'], answer: 2, analysis: '出自王勃《送杜少府之任蜀州》。' },
+      { id: 4, subject: '语文', type: '单选', category: '病句', stem: '下列句子中没有语病的一项是？', options: ['A. 通过这次学习，使我提高了认识', 'B. 他虽然学习好，但是品德也好', 'C. 春天的广州是一个美丽的季节', 'D. 我们要认真学习科学文化知识'], answer: 3, analysis: 'A主语残缺，B关联词不当应用"不仅…而且"，C搭配不当。' },
+      { id: 5, subject: '英语', type: '单选', category: '词汇', stem: 'She ___ to school by bus every day.', options: ['A. go', 'B. goes', 'C. going', 'D. gone'], answer: 1, analysis: '主语 she 为第三人称单数，一般现在时用 goes。' },
+      { id: 6, subject: '英语', type: '单选', category: '完形', stem: 'I have been studying English ___ three years.', options: ['A. since', 'B. for', 'C. in', 'D. at'], answer: 1, analysis: 'for + 时间段表示持续了一段时间，since + 时间点表示从某时开始。' },
+      { id: 7, subject: '数学', type: '单选', category: '集合', stem: '设集合 A={1,2,3}, B={2,3,4}，则 A∩B = ?', options: ['A. {1,2,3,4}', 'B. {1}', 'C. {2,3}', 'D. {4}'], answer: 2, analysis: 'A∩B 表示集合 A 和 B 的交集，即同时属于两个集合的元素，为 {2,3}。' },
+      { id: 8, subject: '语文', type: '单选', category: '古诗文', stem: '下列诗句中描写春天的是？', options: ['A. 停车坐爱枫林晚，霜叶红于二月花', 'B. 忽如一夜春风来，千树万树梨花开', 'C. 碧玉妆成一树高，万条垂下绿丝绦', 'D. 接天莲叶无穷碧，映日荷花别样红'], answer: 2, analysis: 'C出自贺知章《咏柳》，描写早春二月的柳树。A描写秋天，B描写冬雪，D描写夏天。' },
+    ];
+    this.set('questions', qs);
+  },
+
+  _initWords() {
+    if (this.get('words')?.length) return;
+    const ws = [];
+    const wordList = [
+      ['abandon', '放弃'], ['ability', '能力'], ['abroad', '在国外'], ['accept', '接受'], ['achieve', '实现'],
+      ['active', '积极的'], ['actual', '实际的'], ['add', '增加'], ['admire', '钦佩'], ['admit', '承认'],
+      ['advice', '建议'], ['affair', '事务'], ['afford', '负担得起'], ['afraid', '害怕的'], ['against', '反对'],
+      ['allow', '允许'], ['almost', '几乎'], ['alone', '单独的'], ['already', '已经'], ['although', '虽然'],
+      ['among', '在…之中'], ['amount', '数量'], ['ancient', '古代的'], ['anger', '愤怒'], ['announce', '宣布'],
+    ];
+    wordList.forEach(([w, m], i) => ws.push({ id: i + 1, word: w, meaning: m, phonetic: '' }));
+    this.set('words', ws);
+  },
+
+  _initTemplates() {
+    if (this.get('templates')?.length) return;
+    this.set('templates', [
+      { id: 1, subject: '语文', category: '古诗文默写汇总', title: '高中必背古诗文篇目', content: '《劝学》《逍遥游》《师说》《阿房宫赋》《赤壁赋》《氓》《离骚》《蜀道难》《登高》《锦瑟》《虞美人》《念奴娇·赤壁怀古》《永遇乐·京口北固亭怀古》' },
+      { id: 2, subject: '语文', category: '病句类型总结', title: '六大常见病句类型', content: '1. 语序不当\n2. 搭配不当\n3. 成分残缺或赘余\n4. 结构混乱\n5. 表意不明\n6. 不合逻辑' },
+      { id: 3, subject: '语文', category: '作文万能素材', title: '作文万能开头结尾模板', content: '开头：\n• 引用名言式\n• 设问引入式\n• 对比式\n• 情境描绘式\n\n结尾：\n• 总结升华式\n• 呼应开头式\n• 号召呼吁式\n• 哲理感悟式' },
+      { id: 4, subject: '数学', category: '集合', title: '集合运算标准答题步骤', content: '1. 明确集合元素\n2. 判断集合关系\n3. 进行交/并/补运算\n4. 用列举法或描述法写出结果\n5. 检验结果' },
+      { id: 5, subject: '数学', category: '函数', title: '函数单调性证明步骤', content: '1. 设 x₁<x₂ 在定义域内\n2. 计算 f(x₁)-f(x₂)\n3. 判断差的符号\n4. 得出结论' },
+      { id: 6, subject: '英语', category: '完形阅读解题技巧', title: '完形填空解题四步法', content: '1. 通读全文，把握大意\n2. 逐句分析，初选答案\n3. 前后照应，寻找线索\n4. 复读全文，验证答案' },
+      { id: 7, subject: '英语', category: '作文万能句式', title: '英语作文高分句式', content: '开头：\n• It is widely believed that...\n• With the development of...\n\n过渡：\n• What\'s more / Moreover\n• On the one hand... On the other hand...\n\n结尾：\n• In conclusion / To sum up\n• Only in this way can we...' },
+    ]);
+  },
+
+  _initScoreLines() {
+    if (this.get('scoreLines')?.length) return;
+    this.set('scoreLines', [
+      { id: 1, year: 2024, batch: '常规批', college: '深圳职业技术学院', major: '计算机应用技术', score: 370, property: '公办', region: '全省' },
+      { id: 2, year: 2024, batch: '常规批', college: '广东轻工职业技术学院', major: '电子商务', score: 355, property: '公办', region: '全省' },
+      { id: 3, year: 2024, batch: '常规批', college: '揭阳职业技术学院', major: '学前教育', score: 280, property: '公办', region: '揭阳' },
+      { id: 4, year: 2024, batch: '补录批', college: '广东交通职业技术学院', major: '物流管理', score: 250, property: '公办', region: '粤东' },
+      { id: 5, year: 2023, batch: '常规批', college: '广州番禺职业技术学院', major: '软件技术', score: 365, property: '公办', region: '全省' },
+      { id: 6, year: 2023, batch: '补录批', college: '广州城建职业学院', major: '建筑工程技术', score: 230, property: '民办', region: '全省' },
+    ]);
+  },
+
+  _initMaterials() {
+    if (this.get('materials')?.length) return;
+    this.set('materials', [
+      { id: 1, name: '2024年广东学考数学真题', type: 'PDF', category: '真题套卷', uploadTime: '2026-08-01' },
+      { id: 2, name: '语文古诗文默写重点汇编', type: 'PDF', category: '语文资料', uploadTime: '2026-08-02' },
+      { id: 3, name: '英语3500核心词汇表', type: 'PDF', category: '英语资料', uploadTime: '2026-08-03' },
+      { id: 4, name: '数学函数与导数专题训练', type: 'Word', category: '数学资料', uploadTime: '2026-08-04' },
+    ]);
+  },
+
+  _initEssayMaterials() {
+    if (this.get('essayMaterials')?.length) return;
+    this.set('essayMaterials', [
+      { id: 1, type: '语文时事素材', title: '中国航天再创辉煌——嫦娥七号成功发射', content: '2026年，中国航天事业再传捷报。嫦娥七号探测器成功发射，标志着中国探月工程进入新阶段。这体现了中国科技工作者自主创新、勇攀高峰的精神，是写进作文的绝佳素材。适用主题：科技创新、奋斗精神、民族自信。', date: '2026-08-10' },
+      { id: 2, type: '语文时事素材', title: '广东高考综合改革持续推进', content: '广东省教育考试院发布最新高考改革方案，进一步优化"3+1+2"选科模式。对于参加春考的学生来说，语数英三科的基础更加重要。适用主题：教育改革、公平教育、时代发展。', date: '2026-08-09' },
+      { id: 3, type: '英语作文万能句', title: '环境与环保话题万能句式', content: '1. Environmental protection has become a global concern.\n2. It is high time that we took effective measures to protect our environment.\n3. Only by working together can we create a greener and more sustainable world.\n4. Small actions can make a big difference.', date: '2026-08-08' },
+    ]);
+  },
+
+  _initPolicies() {
+    if (this.get('policies')?.length) return;
+    this.set('policies', [
+      { id: 1, title: '2027年广东春季高考（依学考录取）政策解读', content: '广东省春季高考实行"依学考录取"政策，主要依据普通高中学业水平考试（语数英）成绩进行录取。学考成绩满分450分（语数英各150分）。录取分为常规批和补录批两个批次。考生需在高三上学期参加全省统一的语数英学考，成绩公布后可填报志愿。\n\n重要提醒：\n1. 学考成绩是春考录取的唯一依据\n2. 常规批未被录取可参加补录批\n3. 日语考生与英语考生在录取时同等对待\n4. 春考录取后仍可参加夏季高考', date: '2026-08-10' },
+      { id: 2, title: '日语/英语报考区别说明', content: '广东省学考允许考生选择日语或英语作为外语考试科目。两者的区别如下：\n\n1. 考试难度：日语难度相对较低，题型较为简单\n2. 录取规则：日语和英语同等对待，不影响录取\n3. 专业限制：部分外语类专业可能要求英语\n4. 备考建议：英语基础差的学生可考虑选日语\n\n建议根据自身情况选择，不要盲目跟风。', date: '2026-08-05' },
+      { id: 3, title: '春考补录规则详解', content: '春考补录（征集志愿）是指在常规批次录取结束后，部分院校未完成招生计划时进行的补充录取。\n\n补录规则：\n1. 补录分数线通常低于常规批次\n2. 已参加春考但未被录取的考生可参加补录\n3. 补录时间一般在常规批录取结束后1-2周\n4. 补录也有公办和民办院校\n\n建议：常规批填报时做好保底，不要完全依赖补录。', date: '2026-07-20' },
+    ]);
+  },
+
+  logStudy(subject, duration) { /* 学习时长记录占位 */ },
+  addError(qId) {
+    const errors = this.get('errorBook') || [];
+    if (!errors.includes(qId)) { errors.push(qId); this.set('errorBook', errors); }
+  },
+  removeError(qId) {
+    let errors = this.get('errorBook') || [];
+    errors = errors.filter(id => id !== qId);
+    this.set('errorBook', errors);
+  },
+  toggleFav(qId) {
+    let favs = this.get('favorites') || [];
+    if (favs.includes(qId)) { favs = favs.filter(id => id !== qId); } else { favs.push(qId); }
+    this.set('favorites', favs);
+    return favs.includes(qId);
+  },
+  isFav(qId) { return (this.get('favorites') || []).includes(qId); },
+  isError(qId) { return (this.get('errorBook') || []).includes(qId); },
+};
+
+DB.init();
+
+// ===== APP STATE =====
+const App = {
+  currentTab: 'home',
+  currentPage: 'home',
+  pageStack: [],
+  isAdmin: false,
+  adminLoggedIn: false,
+  quizMode: null, // 'special' | 'exam' | 'mock' | 'error-paper'
+  quizSubject: null,
+  quizCategory: null,
+  quizQuestions: [],
+  quizIndex: 0,
+  quizAnswers: {},
+  quizResult: null,
+  timerInterval: null,
+  timerSeconds: 0,
+  timerRunning: false,
+  timerSubject: '',
+
+  init() {
+    this.renderPage('home');
+    this.updateNav();
+    document.getElementById('headerBack').addEventListener('click', (e) => { e.preventDefault(); this.goBack(); });
+  },
+
+  // Navigation
+  switchTab(tab) {
+    this.pageStack = [];
+    this.currentTab = tab;
+    this.isAdmin = false;
+    document.getElementById('headerAction').textContent = '管理';
+    document.getElementById('headerAction').style.display = '';
+    this.updateNav();
+    this.renderPage(tab);
+    document.querySelector('.main-content').scrollTop = 0;
+  },
+
+  updateNav() {
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.tab === this.currentTab);
+    });
+    document.getElementById('bottomNav').style.display = this.isAdmin ? 'none' : '';
+  },
+
+  navigateTo(page, title, data) {
+    this.pageStack.push({ page: this.currentPage, title: document.getElementById('headerTitle').textContent, data: this._currentPageData });
+    this._currentPageData = data;
+    this.currentPage = page;
+    this.renderPage(page, data);
+    this.updateHeader(title);
+  },
+
+  goBack() {
+    if (this.pageStack.length === 0) return;
+    const prev = this.pageStack.pop();
+    this._currentPageData = prev.data;
+    this.currentPage = prev.page;
+    this.renderPage(prev.page, prev.data);
+    this.updateHeader(prev.title);
+  },
+
+  updateHeader(title) {
+    document.getElementById('headerTitle').textContent = title;
+    document.getElementById('headerBack').style.display = this.pageStack.length > 0 ? '' : 'none';
+  },
+
+  renderPage(page, data) {
+    const container = document.getElementById('mainContent');
+    this.currentPage = page;
+    if (page.startsWith('admin-') && !this.adminLoggedIn && page !== 'admin-login') {
+      this.navigateTo('admin-login', '管理后台登录');
+      return;
+    }
+    const renderer = this._pages[page];
+    container.innerHTML = renderer ? renderer.call(this, data) : '<div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-text">页面开发中...</div></div>';
+    container.scrollTop = 0;
+    if (page === 'home' || page === 'quiz' || page === 'errors' || page === 'materials' || page === 'community') {
+      this.currentTab = page;
+      this.pageStack = [];
+      document.getElementById('headerBack').style.display = 'none';
+      document.getElementById('headerTitle').textContent = page === 'home' ? '粤春考助手' : page === 'quiz' ? '刷题题库' : page === 'errors' ? '错题本' : page === 'materials' ? '学习资料' : '社区';
+      this.updateNav();
+    }
+  },
+
+  _currentPageData: null,
+
+  // Toast
+  toast(msg) {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = msg;
+    document.getElementById('toastContainer').appendChild(el);
+    setTimeout(() => el.remove(), 2000);
+  },
+
+  // Admin toggle
+  toggleAdmin() {
+    if (this.isAdmin) {
+      this.isAdmin = false;
+      this.adminLoggedIn = false;
+      document.getElementById('headerAction').textContent = '管理';
+      this.switchTab('home');
+    } else {
+      if (this.adminLoggedIn) {
+        this.isAdmin = true;
+        document.getElementById('headerAction').textContent = '学生端';
+        this.navigateTo('admin-home', '管理后台');
+      } else {
+        this.navigateTo('admin-login', '管理后台登录');
+      }
+    }
+  },
+
+  // ===== PAGE RENDERERS =====
+  _pages: {
+    // HOME
+    'home': function () {
+      const plan = DB.get('studyPlan');
+      return `
+        <div class="highlight-card">
+          <h3>2027广东春考倒计时</h3>
+          <p style="font-size:24px;font-weight:700;color:var(--primary-dark);margin:8px 0">约 140 天</p>
+          <p style="font-size:13px;color:var(--text-secondary)">预计考试时间：2027年1月</p>
+        </div>
+        ${plan ? `
+        <div class="card" style="cursor:pointer" onclick="App.navigateTo('plan-view','学习计划')">
+          <div class="card-title">📋 我的备考计划</div>
+          <div class="card-subtitle">目标总分：${plan.targetScore}分 | 已生成专属备考方案</div>
+          <div style="margin-top:8px;font-size:13px;color:var(--text-light)">点击查看详情 →</div>
+        </div>` : `
+        <button class="hero-btn" onclick="App.navigateTo('plan-form','生成学习计划')">
+          🎯 一键生成我的备考计划
+        </button>
+        <p style="text-align:center;margin:8px 0 16px;font-size:13px;color:var(--text-light)">AI智能分析，为你定制专属备考方案</p>`}
+        
+        <div class="section-title">📊 学习概况</div>
+        <div class="grid-2">
+          ${this._statCard('刷题数', `${DB.get('studyStats').totalQuestions}`, '#3b82f6')}
+          ${this._statCard('正确率', `${DB.get('studyStats').totalQuestions ? Math.round(DB.get('studyStats').correctQuestions / DB.get('studyStats').totalQuestions * 100) : 0}%`, '#10b981')}
+          ${this._statCard('错题数', `${DB.get('errorBook').length}`, '#ef4444')}
+          ${this._statCard('打卡', `${DB.get('studyStats').streak}天`, '#f59e0b')}
+        </div>
+
+        <div class="section-title">🛠️ 实用工具</div>
+        <div class="grid-2">
+          <div class="card" style="cursor:pointer;text-align:center" onclick="App.navigateTo('essay-list','作文素材')">
+            <div style="font-size:28px;margin-bottom:6px">📝</div>
+            <div style="font-size:14px;font-weight:500">作文素材推送</div>
+          </div>
+          <div class="card" style="cursor:pointer;text-align:center" onclick="App.navigateTo('timer','模考计时器')">
+            <div style="font-size:28px;margin-bottom:6px">⏱️</div>
+            <div style="font-size:14px;font-weight:500">模考计时器</div>
+          </div>
+          <div class="card" style="cursor:pointer;text-align:center" onclick="App.navigateTo('study-time','学习时长看板')">
+            <div style="font-size:28px;margin-bottom:6px">📈</div>
+            <div style="font-size:14px;font-weight:500">学习时长统计</div>
+          </div>
+          <div class="card" style="cursor:pointer;text-align:center" onclick="App.navigateTo('policy-list','政策解读')">
+            <div style="font-size:28px;margin-bottom:6px">📰</div>
+            <div style="font-size:14px;font-weight:500">政策解读专栏</div>
+          </div>
+        </div>
+      `;
+    },
+
+    // PLAN FORM
+    'plan-form': function () {
+      return `
+        <div class="card">
+          <div class="card-title">📋 填写备考信息</div>
+          <div class="card-subtitle">AI将根据你的情况生成专属备考计划</div>
+        </div>
+        <div class="card">
+          <div class="form-group"><label class="form-label">最近一次学考成绩</label>
+            <div class="form-row">
+              <div><input class="form-input" id="pf-chinese" type="number" placeholder="语文" min="0" max="150" value="120"></div>
+              <div><input class="form-input" id="pf-math" type="number" placeholder="数学" min="0" max="150" value="100"></div>
+              <div><input class="form-input" id="pf-english" type="number" placeholder="英语" min="0" max="150" value="110"></div>
+            </div>
+            <div class="form-hint">满分各150分</div>
+          </div>
+          <div class="form-group"><label class="form-label">目标总分</label>
+            <input class="form-input" id="pf-target" type="number" placeholder="目标总分（满分450分）" min="0" max="450" value="400">
+          </div>
+          <div class="form-group"><label class="form-label">每天可学习时长</label>
+            <div class="form-row">
+              <div><input class="form-input" id="pf-weekday" type="number" placeholder="工作日(小时)" min="0" max="24" value="3"></div>
+              <div><input class="form-input" id="pf-weekend" type="number" placeholder="周末(小时)" min="0" max="24" value="6"></div>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">目前在用的教辅资料</label>
+            <input class="form-input" id="pf-books" placeholder="如：五年高考三年模拟、广东学考真题汇编">
+          </div>
+          <div class="form-group"><label class="form-label">薄弱科目 / 短板说明</label>
+            <textarea class="form-textarea" id="pf-weakness" placeholder="如：数学函数部分较弱、英语完形填空经常出错..."></textarea>
+          </div>
+          <button class="btn btn-primary btn-lg" onclick="App.generatePlan()">✨ AI生成备考方案</button>
+        </div>
+      `;
+    },
+
+    // PLAN VIEW
+    'plan-view': function () {
+      const plan = DB.get('studyPlan');
+      if (!plan) return '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">还没有备考计划</div><button class="btn btn-primary" style="margin-top:16px" onclick="App.navigateTo(\'plan-form\',\'生成学习计划\')">去生成</button></div>';
+      const now = new Date();
+      const examDate = new Date('2027-01-10');
+      const daysLeft = Math.ceil((examDate - now) / (1000 * 60 * 60 * 24));
+      return `
+        <div class="highlight-card" style="text-align:center">
+          <div style="font-size:40px;font-weight:700;color:var(--primary-dark)">${plan.targetScore}</div>
+          <div style="font-size:14px;color:var(--text-secondary)">目标总分（450分制）</div>
+          <div style="margin-top:8px;font-size:13px;color:var(--primary)">⏰ 距离考试约 ${daysLeft} 天</div>
+        </div>
+        ${this._planPhase('第一阶段：基础夯实', plan.phase1, '#3b82f6')}
+        ${this._planPhase('第二阶段：强化刷题', plan.phase2, '#8b5cf6')}
+        ${this._planPhase('第三阶段：真题冲刺模考', plan.phase3, '#ef4444')}
+        <div class="card">
+          <div class="card-title">⚠️ 广东学考避坑提示</div>
+          <div class="card-subtitle" style="white-space:pre-line">${plan.tips}</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn btn-outline btn-block" onclick="App.navigateTo('plan-edit','编辑计划',{plan})">修改计划</button>
+          <button class="btn btn-primary btn-block" onclick="App.toast('已复制分享链接')">分享方案</button>
+        </div>
+      `;
+    },
+
+    // PLAN EDIT
+    'plan-edit': function (data) {
+      return `
+        <div class="card">
+          <div class="card-title">修改备考计划</div>
+          <div class="card-subtitle">选择修改方式</div>
+        </div>
+        <button class="btn btn-primary btn-lg" style="margin-bottom:10px" onclick="App.navigateTo('plan-form','重新生成')">📝 重新填写表单并生成</button>
+        <button class="btn btn-outline btn-lg" onclick="App.navigateTo('plan-edit-direct','直接编辑')">✏️ 直接编辑当前方案</button>
+      `;
+    },
+
+    // QUIZ - Subject Selection
+    'quiz': function () {
+      return `
+        <div class="section-title">📚 选择科目</div>
+        <div class="grid-3">
+          ${['语文','数学','英语'].map(s => `
+            <div class="card" style="cursor:pointer;text-align:center" onclick="App.navigateTo('quiz-special','${s}专项刷题',{subject:'${s}'})">
+              <div style="font-size:32px;margin-bottom:4px">${s==='语文'?'📖':s==='数学'?'📐':'🌍'}</div>
+              <div style="font-size:14px;font-weight:500">${s}</div>
+            </div>`).join('')}
+        </div>
+        <div class="section-title">🎯 特色工具</div>
+        ${this._listItem('📚', '学考350高频词', '单词闯关·听音默写·词义单选', () => App.navigateTo('words-tool','350高频词'))}
+        ${this._listItem('📋', '答题模板素材库', '语文·数学·英语模板', () => App.navigateTo('templates','答题模板'))}
+        ${this._listItem('📝', '真题模考全真模拟', '严格复刻正式学考', () => App.navigateTo('mock-exam-list','真题模考'))}
+        ${this._listItem('❌', '错题专项组卷', '一键生成专属错题试卷', () => App.navigateTo('error-paper','错题组卷'))}
+        ${this._listItem('🔍', '真题分数线查询', '近3年录取数据一键查', () => App.navigateTo('score-query','分数线查询'))}
+      `;
+    },
+
+    // QUIZ SPECIAL
+    'quiz-special': function (data) {
+      const subject = data.subject;
+      const cats = [...new Set(DB.get('questions').filter(q => q.subject === subject).map(q => q.category))];
+      return `
+        <div class="card"><div class="card-title">${subject}专项刷题</div><div class="card-subtitle">选择专项分类开始练习</div></div>
+        ${cats.map(c => `
+          <div class="card" style="cursor:pointer" onclick="App.startQuiz('special','${subject}','${c}')">
+            <div class="card-title">📝 ${c}</div>
+            <div class="card-subtitle">${DB.get('questions').filter(q=>q.subject===subject&&q.category===c).length} 道题目</div>
+          </div>`).join('')}
+        <div class="card" style="cursor:pointer" onclick="App.startQuiz('special','${subject}','all')">
+          <div class="card-title">🔀 综合练习</div>
+          <div class="card-subtitle">${subject}全部题目随机练习</div>
+        </div>
+      `;
+    },
+
+    // MOCK EXAM LIST
+    'mock-exam-list': function () {
+      return `
+        <div class="card"><div class="card-title">📝 真题模考全真模拟</div><div class="card-subtitle">严格复刻正式学考答题时长、题型分值</div></div>
+        ${['语文','数学','英语'].map(s => `
+          <div class="card" style="cursor:pointer" onclick="App.startQuiz('mock','${s}','all')">
+            <div class="card-title">${s}全真模拟</div>
+            <div class="card-subtitle">⏱️ 120分钟 | 📝 ${DB.get('questions').filter(q=>q.subject===s).length} 题 | 满分150分</div>
+          </div>`).join('')}
+      `;
+    },
+
+    // QUIZ ANSWER
+    'quiz-answer': function () {
+      const q = App.quizQuestions[App.quizIndex];
+      const total = App.quizQuestions.length;
+      const userAnswer = App.quizAnswers[q.id];
+      const progress = Math.round((App.quizIndex / total) * 100);
+      return `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <span class="tag tag-blue">${q.subject}·${q.category}</span>
+          <span style="font-size:13px;color:var(--text-secondary)">${App.quizIndex+1}/${total}</span>
+        </div>
+        <div class="progress-bar" style="margin-bottom:16px"><div class="progress-fill" style="width:${progress}%"></div></div>
+        <div class="card">
+          <div style="font-size:15px;font-weight:500;line-height:1.8;margin-bottom:16px">${q.stem}</div>
+          ${q.options.map((opt, i) => `
+            <div class="quiz-option ${userAnswer===i?'selected':''}" onclick="App.selectAnswer(${i})">
+              <div class="quiz-option-marker">${'ABCD'[i]}</div>
+              <span>${opt.substring(3)}</span>
+            </div>`).join('')}
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          ${App.quizIndex > 0 ? `<button class="btn btn-outline btn-block" onclick="App.prevQuestion()">上一题</button>` : ''}
+          <button class="btn btn-primary btn-block" onclick="App.nextQuestion()" ${userAnswer===undefined?'disabled':''} style="${userAnswer===undefined?'opacity:.5':''}">
+            ${App.quizIndex < total-1 ? '下一题' : '提交'}
+          </button>
+        </div>
+        <div class="answer-grid" style="margin-top:16px">
+          ${App.quizQuestions.map((item, i) => `
+            <div class="answer-dot ${App.quizAnswers[item.id]!==undefined?'done':''} ${i===App.quizIndex?'current':''}" onclick="App.jumpToQuestion(${i})">${i+1}</div>`).join('')}
+        </div>
+      `;
+    },
+
+    // QUIZ RESULT
+    'quiz-result': function () {
+      const r = App.quizResult;
+      const totalQ = App.quizQuestions.length;
+      return `
+        <div class="highlight-card" style="text-align:center">
+          <div style="font-size:48px;font-weight:700;color:${r.score>=60?'var(--success)':'var(--danger)'}">${r.score}</div>
+          <div style="font-size:14px;color:var(--text-secondary)">总分（${r.mode==='mock'?'150':''}分制）</div>
+          <div style="margin-top:8px">✅ ${r.correct}题 &nbsp; ❌ ${r.wrong}题 &nbsp; 📊 正确率 ${Math.round(r.correct/totalQ*100)}%</div>
+        </div>
+        ${App.quizQuestions.map((q, i) => {
+          const ua = App.quizAnswers[q.id];
+          const correct = ua === q.answer;
+          return `
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span class="tag ${correct?'tag-green':'tag-red'}">${correct?'正确':'错误'}</span>
+              <span style="font-size:12px;color:var(--text-light)">${q.subject}·${q.category}</span>
+            </div>
+            <div style="font-size:14px;font-weight:500;margin-bottom:8px">${i+1}. ${q.stem}</div>
+            <div style="font-size:13px;color:var(--success)">✅ 正确答案：${'ABCD'[q.answer]}. ${q.options[q.answer].substring(3)}</div>
+            ${!correct ? `<div style="font-size:13px;color:var(--danger)">❌ 你的答案：${'ABCD'[ua]}. ${q.options[ua].substring(3)}</div>` : ''}
+            <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;background:var(--bg);padding:8px;border-radius:6px">💡 ${q.analysis}</div>
+            <div style="margin-top:8px;display:flex;gap:8px">
+              <button class="btn btn-sm ${DB.isFav(q.id)?'btn-primary':'btn-outline'}" onclick="App.toggleFavFromResult(${q.id},this)">${DB.isFav(q.id)?'⭐ 已收藏':'☆ 收藏'}</button>
+            </div>
+          </div>`;
+        }).join('')}
+        <button class="btn btn-primary btn-lg" style="margin-top:12px" onclick="App.goBack()">返回</button>
+      `;
+    },
+
+    // ERROR BOOK
+    'errors': function () {
+      const errorIds = DB.get('errorBook');
+      const errorQs = DB.get('questions').filter(q => errorIds.includes(q.id));
+      if (!errorQs.length) return '<div class="empty-state"><div class="empty-state-icon">🎉</div><div class="empty-state-text">暂无错题，继续保持！</div></div>';
+      const subjects = ['语文','数学','英语'];
+      return `
+        <div class="filter-row" id="errorFilter">
+          <div class="filter-chip active" onclick="App.filterErrors('all',this)">全部</div>
+          ${subjects.map(s => `<div class="filter-chip" onclick="App.filterErrors('${s}',this)">${s}</div>`).join('')}
+        </div>
+        <div id="errorList">
+          ${errorQs.map(q => `
+            <div class="card" style="cursor:pointer" data-subject="${q.subject}" onclick="App.navigateTo('error-redo','错题重做',{q})">
+              <div class="card-title">${q.stem.substring(0,30)}${q.stem.length>30?'...':''}</div>
+              <div class="card-subtitle"><span class="tag tag-blue">${q.subject}</span> <span class="tag tag-orange">${q.category}</span></div>
+            </div>`).join('')}
+        </div>
+      `;
+    },
+
+    // ERROR REDO
+    'error-redo': function (data) {
+      const q = data.q;
+      return `
+        <div class="card">
+          <span class="tag tag-red" style="margin-bottom:8px;display:inline-block">错题重做</span>
+          <div style="font-size:15px;font-weight:500;line-height:1.8;margin-bottom:16px">${q.stem}</div>
+          ${q.options.map((opt, i) => `
+            <div class="quiz-option" onclick="App.checkErrorRedo(this,${i},${q.answer})" data-opt="${i}">
+              <div class="quiz-option-marker">${'ABCD'[i]}</div>
+              <span>${opt.substring(3)}</span>
+            </div>`).join('')}
+          <div id="errorRedoResult" style="display:none;margin-top:12px;padding:12px;background:var(--bg);border-radius:8px">
+            <div id="errorRedoText" style="font-size:14px"></div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-top:8px">💡 ${q.analysis}</div>
+          </div>
+        </div>
+      `;
+    },
+
+    // FAVORITES
+    'favorites': function () {
+      const favIds = DB.get('favorites');
+      const favQs = DB.get('questions').filter(q => favIds.includes(q.id));
+      if (!favQs.length) return '<div class="empty-state"><div class="empty-state-icon">⭐</div><div class="empty-state-text">暂无收藏题目</div></div>';
+      return `
+        ${favQs.map(q => `
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span class="tag tag-blue">${q.subject}</span>
+              <span class="tag tag-orange">${q.category}</span>
+              <span style="flex:1"></span>
+              <button class="btn btn-sm btn-danger" onclick="App.removeFav(${q.id});App.renderPage('favorites')">取消收藏</button>
+            </div>
+            <div style="font-size:14px;font-weight:500;margin-bottom:4px">${q.stem}</div>
+          </div>`).join('')}
+      `;
+    },
+
+    // MATERIALS
+    'materials': function () {
+      const mats = DB.get('materials');
+      const cats = ['全部','语文资料','数学资料','英语资料','真题套卷','模拟试卷','知识总结','其他'];
+      return `
+        <div class="search-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="搜索资料名称..." oninput="App.searchMaterials(this.value)">
+        </div>
+        <div class="filter-row" id="matFilter">
+          ${cats.map((c,i) => `<div class="filter-chip ${i===0?'active':''}" onclick="App.filterMaterials('${c}',this)">${c}</div>`).join('')}
+        </div>
+        <div id="matList">
+          ${!mats.length ? '<div class="empty-state"><div class="empty-state-icon">📂</div><div class="empty-state-text">暂无学习资料</div></div>' :
+          mats.map(m => `
+            <div class="card" data-cat="${m.category}" data-name="${m.name}">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:24px">${m.type==='PDF'?'📕':'📘'}</span>
+                <div style="flex:1">
+                  <div style="font-size:14px;font-weight:500">${m.name}</div>
+                  <div style="font-size:12px;color:var(--text-secondary)">${m.category} · ${m.type} · ${m.uploadTime}</div>
+                </div>
+                <button class="btn btn-sm btn-primary" onclick="App.toast('模拟下载：${m.name}')">下载</button>
+              </div>
+            </div>`).join('')}
+        </div>
+      `;
+    },
+
+    // STUDY STATS
+    'stats': function () {
+      const stats = DB.get('studyStats');
+      const total = stats.totalQuestions;
+      return `
+        <div style="display:none" id="statsPage"></div>
+        <div class="section-title">📊 学习数据统计</div>
+        <div class="grid-2">
+          ${this._statCard('刷题总数', total, '#3b82f6')}
+          ${this._statCard('正确率', `${total ? Math.round(stats.correctQuestions/total*100) : 0}%`, '#10b981')}
+          ${this._statCard('错题数量', DB.get('errorBook').length, '#ef4444')}
+          ${this._statCard('连续打卡', `${stats.streak}天`, '#f59e0b')}
+        </div>
+        <div class="card" style="margin-top:12px">
+          <div class="card-title">各科目正确率</div>
+          ${['语文','数学','英语'].map(s => {
+            const ss = stats.subjectStats[s];
+            const rate = ss.total ? Math.round(ss.correct/ss.total*100) : 0;
+            return `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${s}</span><span>${ss.correct}/${ss.total} (${rate}%)</span></div><div class="chart-bar"><div class="chart-bar-fill" style="width:${rate}%;background:${rate>=70?'#10b981':rate>=50?'#f59e0b':'#ef4444'}"></div></div></div>`;
+          }).join('')}
+        </div>
+        <div class="card">
+          <div class="card-title">📚 单词学习进度</div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>已学</span><span>${stats.wordProgress.learned}/${stats.wordProgress.total}</span></div>
+          <div class="chart-bar" style="height:10px"><div class="chart-bar-fill" style="width:${Math.round(stats.wordProgress.learned/stats.wordProgress.total*100)}%;background:var(--primary)"></div></div>
+        </div>
+      `;
+    },
+
+    // ESSAY LIST
+    'essay-list': function () {
+      const mats = DB.get('essayMaterials');
+      return `
+        <div class="filter-row" id="essayFilter">
+          <div class="filter-chip active" onclick="App.filterEssays('all',this)">全部</div>
+          <div class="filter-chip" onclick="App.filterEssays('语文时事素材',this)">语文时事素材</div>
+          <div class="filter-chip" onclick="App.filterEssays('英语作文万能句',this)">英语万能句</div>
+        </div>
+        <div id="essayList">
+          ${!mats.length ? '<div class="empty-state"><div class="empty-state-icon">📝</div><div class="empty-state-text">暂无素材</div></div>' :
+          mats.map(m => `
+            <div class="card" style="cursor:pointer" data-type="${m.type}" onclick="App.navigateTo('essay-detail','素材详情',{m})">
+              <span class="tag ${m.type==='语文时事素材'?'tag-blue':'tag-green'}" style="margin-bottom:6px">${m.type}</span>
+              <div class="card-title">${m.title}</div>
+              <div class="card-subtitle">${m.date}</div>
+            </div>`).join('')}
+        </div>
+      `;
+    },
+
+    'essay-detail': function (data) {
+      const m = data.m;
+      return `
+        <div class="card">
+          <span class="tag ${m.type==='语文时事素材'?'tag-blue':'tag-green'}" style="margin-bottom:8px">${m.type}</span>
+          <div class="card-title">${m.title}</div>
+          <div class="card-subtitle" style="margin-bottom:12px">${m.date}</div>
+          <div style="font-size:14px;line-height:1.8;white-space:pre-line">${m.content}</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn btn-outline btn-block" onclick="App.toast('已收藏')">⭐ 收藏</button>
+          <button class="btn btn-primary btn-block" onclick="App.toast('已复制分享链接')">分享</button>
+        </div>
+      `;
+    },
+
+    // TIMER
+    'timer': function () {
+      return `
+        <div class="card" style="text-align:center">
+          <div class="card-title">⏱️ 模考专用计时器</div>
+          <div class="card-subtitle">内置广东学考标准答题时长</div>
+        </div>
+        <div class="grid-3" style="margin-bottom:16px">
+          <div class="card" style="cursor:pointer;text-align:center" onclick="App.startTimer('语文',120)">
+            <div style="font-size:24px">📖</div><div style="font-size:14px;font-weight:500">语文</div><div style="font-size:12px;color:var(--text-secondary)">120分钟</div>
+          </div>
+          <div class="card" style="cursor:pointer;text-align:center" onclick="App.startTimer('数学',120)">
+            <div style="font-size:24px">📐</div><div style="font-size:14px;font-weight:500">数学</div><div style="font-size:12px;color:var(--text-secondary)">120分钟</div>
+          </div>
+          <div class="card" style="cursor:pointer;text-align:center" onclick="App.startTimer('英语',120)">
+            <div style="font-size:24px">🌍</div><div style="font-size:14px;font-weight:500">英语</div><div style="font-size:12px;color:var(--text-secondary)">120分钟</div>
+          </div>
+        </div>
+        <div class="card"><div class="form-label">自定义时长（分钟）</div>
+          <div class="form-row"><input class="form-input" id="customTime" type="number" placeholder="输入分钟数" min="1" value="60">
+          <button class="btn btn-primary" onclick="App.startTimer('自定义',parseInt(document.getElementById('customTime').value))">开始</button></div>
+        </div>
+        <div id="timerDisplay" style="display:none">
+          <div class="timer-display" id="timerClock">120:00</div>
+          <div class="timer-subject" id="timerLabel">语文 · 120分钟</div>
+          <button class="btn btn-danger btn-lg" style="margin-top:16px" onclick="App.stopTimer()">停止计时</button>
+        </div>
+      `;
+    },
+
+    // STUDY TIME
+    'study-time': function () {
+      const subjects = ['语文','数学','英语','综合'];
+      const data = [12, 8, 5, 3]; // mock data
+      return `
+        <div class="card"><div class="card-title">📈 学习时长统计看板</div><div class="card-subtitle">本周学习时长分布</div></div>
+        ${subjects.map((s,i) => `<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${s}</span><span>${data[i]}小时</span></div><div class="chart-bar" style="height:14px"><div class="chart-bar-fill" style="width:${data[i]/Math.max(...data)*100}%;background:${['#3b82f6','#10b981','#f59e0b','#8b5cf6'][i]}"></div></div></div>`).join('')}
+        <div class="card" style="margin-top:12px;background:#fef2f2;border:1px solid #fecaca">
+          <div style="font-size:14px;font-weight:500;color:var(--danger)">⚠️ 学习报告</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:6px">英语和综合投入时间不足，建议增加这两科的学习时长。</div>
+        </div>
+      `;
+    },
+
+    // POLICY LIST
+    'policy-list': function () {
+      const ps = DB.get('policies');
+      return `
+        ${!ps.length ? '<div class="empty-state"><div class="empty-state-icon">📰</div><div class="empty-state-text">暂无政策</div></div>' :
+        ps.map(p => `
+          <div class="card" style="cursor:pointer" onclick="App.navigateTo('policy-detail','政策详情',{p})">
+            <div class="card-title">${p.title}</div>
+            <div class="card-subtitle">${p.date}</div>
+          </div>`).join('')}
+      `;
+    },
+
+    'policy-detail': function (data) {
+      const p = data.p;
+      return `
+        <div class="card">
+          <div class="card-title">${p.title}</div>
+          <div class="card-subtitle" style="margin-bottom:12px">${p.date}</div>
+          <div style="font-size:14px;line-height:1.8;white-space:pre-line">${p.content}</div>
+        </div>
+        <button class="btn btn-primary btn-lg" style="margin-top:12px" onclick="App.toast('已复制分享链接')">分享给好友</button>
+      `;
+    },
+
+    // COMMUNITY
+    'community': function () {
+      const posts = DB.get('posts');
+      return `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:16px;font-weight:600">💬 学习社区</div>
+          <button class="btn btn-sm btn-primary" onclick="App.navigateTo('community-post','发帖')">+ 发帖</button>
+        </div>
+        <div class="tabs" id="communityTabs">
+          <div class="tab active" onclick="App.filterCommunity('all',this)">全部</div>
+          <div class="tab" onclick="App.filterCommunity('学习打卡区',this)">学习打卡</div>
+          <div class="tab" onclick="App.filterCommunity('问题求助区',this)">问题求助</div>
+          <div class="tab" onclick="App.filterCommunity('志愿经验分享区',this)">志愿经验</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="btn btn-sm btn-outline" onclick="App.navigateTo('community-announce','公告栏')">📢 公告栏</button>
+          <button class="btn btn-sm btn-outline" onclick="App.navigateTo('community-ranking','学习排行')">🏆 排行榜</button>
+        </div>
+        <div id="communityList">
+          ${!posts.length ? '<div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-text">暂无帖子，快来发第一个吧！</div></div>' :
+          posts.reverse().map(p => `
+            <div class="post-card" style="cursor:pointer" data-board="${p.board}" onclick="App.navigateTo('community-detail','帖子详情',{p})">
+              <div class="post-header">
+                <div class="post-avatar">${p.author[0]}</div>
+                <div><div class="post-author">${p.author}</div><div class="post-time">${p.time} · <span class="tag tag-blue">${p.board}</span></div></div>
+              </div>
+              <div class="post-title">${p.title}</div>
+              <div class="post-content">${p.content.substring(0,80)}${p.content.length>80?'...':''}</div>
+              <div class="post-meta"><span>💬 ${p.replies?p.replies.length:0} 回复</span></div>
+            </div>`).join('')}
+        </div>
+      `;
+    },
+
+    'community-post': function () {
+      return `
+        <div class="card">
+          <div class="form-group"><label class="form-label">选择板块</label>
+            <select class="form-select" id="postBoard"><option>学习打卡区</option><option>问题求助区</option><option>志愿经验分享区</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">标题</label>
+            <input class="form-input" id="postTitle" placeholder="请输入帖子标题">
+          </div>
+          <div class="form-group"><label class="form-label">内容</label>
+            <textarea class="form-textarea" id="postContent" placeholder="分享你的学习心得..." rows="5"></textarea>
+          </div>
+          <button class="btn btn-primary btn-lg" onclick="App.submitPost()">发布帖子</button>
+        </div>
+      `;
+    },
+
+    'community-detail': function (data) {
+      const p = data.p;
+      return `
+        <div class="post-card">
+          <div class="post-header">
+            <div class="post-avatar">${p.author[0]}</div>
+            <div><div class="post-author">${p.author}</div><div class="post-time">${p.time} · <span class="tag tag-blue">${p.board}</span></div></div>
+          </div>
+          <div class="post-title" style="font-size:18px">${p.title}</div>
+          <div class="post-content" style="white-space:pre-line">${p.content}</div>
+        </div>
+        <div style="margin-top:4px"><button class="btn btn-outline btn-sm btn-block" onclick="App.toast('已复制分享链接')">分享帖子</button></div>
+        ${p.replies && p.replies.length ? `
+        <div class="section-title">回复 (${p.replies.length})</div>
+        ${p.replies.map(r => `
+          <div class="card" style="padding:12px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <div class="post-avatar" style="width:28px;height:28px;font-size:12px">${r.author[0]}</div>
+              <span style="font-size:13px;font-weight:500">${r.author}</span>
+              <span style="font-size:11px;color:var(--text-light)">${r.time}</span>
+            </div>
+            <div style="font-size:14px">${r.content}</div>
+          </div>`).join('')}` : '<div class="empty-state"><div class="empty-state-text">暂无回复</div></div>'}
+      `;
+    },
+
+    'community-announce': function () {
+      const anns = DB.get('announcements');
+      return anns.map(a => `
+        <div class="card">
+          <div class="card-title">📢 ${a.title}</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">${a.time}</div>
+          <div style="font-size:14px;line-height:1.8">${a.content}</div>
+        </div>`).join('');
+    },
+
+    'community-ranking': function () {
+      const rankings = [
+        { name: '学霸小明', score: 2580, words: 350, posts: 45, replies: 89 },
+        { name: '努力的小红', score: 2150, words: 280, posts: 32, replies: 56 },
+        { name: '追梦少年', score: 1890, words: 220, posts: 28, replies: 42 },
+        { name: '备考小陈', score: 1620, words: 180, posts: 20, replies: 35 },
+        { name: '万里（你）', score: 980, words: 120, posts: 12, replies: 20 },
+      ];
+      return `
+        <div class="card"><div class="card-title">🏆 学习排行榜</div><div class="card-subtitle">积分 = 掌握词汇数 + 打卡数×10 + 回复数×5</div></div>
+        ${rankings.map((r, i) => `
+          <div class="rank-item">
+            <div class="rank-num ${i===0?'gold':i===1?'silver':i===2?'bronze':'normal'}">${i+1}</div>
+            <div style="flex:1"><div style="font-size:15px;font-weight:500">${r.name}</div><div style="font-size:12px;color:var(--text-secondary)">${r.words}词汇 · ${r.posts}帖 · ${r.replies}回复</div></div>
+            <div style="font-size:18px;font-weight:700;color:var(--primary)">${r.score}</div>
+          </div>`).join('')}
+      `;
+    },
+
+    // WORDS TOOL
+    'words-tool': function () {
+      return `
+        <div class="card"><div class="card-title">📚 学考350高频词</div><div class="card-subtitle">三种模式助你高效背单词</div></div>
+        ${this._listItem('🎮', '单词闯关模式', '看单词选词义，趣味闯关', () => App.navigateTo('words-challenge','单词闯关'))}
+        ${this._listItem('🎧', '听音默写模式', '听发音写单词，练听力拼写', () => App.toast('录音播放功能为模拟，进入闯关模式体验'))}
+        ${this._listItem('📝', '词义单选模式', '看词义选单词，巩固记忆', () => App.navigateTo('words-meaning','词义单选'))}
+        ${this._listItem('📋', '复习清单', '艾宾浩斯遗忘曲线智能推送', () => App.navigateTo('words-review','复习清单'))}
+        ${this._listItem('📤', '导出单词PDF', '下载打印背诵', () => App.toast('PDF导出功能模拟，已生成下载链接'))}
+      `;
+    },
+
+    'words-challenge': function () {
+      return App._wordsGame('challenge');
+    },
+
+    'words-meaning': function () {
+      return App._wordsGame('meaning');
+    },
+
+    'words-review': function () {
+      const words = DB.get('words').slice(0, 8);
+      return `
+        <div class="card"><div class="card-title">📋 复习清单</div><div class="card-subtitle">基于艾宾浩斯遗忘曲线，以下单词需要复习</div></div>
+        ${words.map(w => `
+          <div class="card" style="cursor:pointer" onclick="App.toast('进入练习：${w.word}')">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-size:16px;font-weight:600">${w.word}</div><div style="font-size:13px;color:var(--text-secondary)">${w.meaning}</div></div>
+              <span class="tag tag-orange">需复习</span>
+            </div>
+          </div>`).join('')}
+      `;
+    },
+
+    // TEMPLATES
+    'templates': function () {
+      return `
+        <div class="section-title">📋 答题模板素材库</div>
+        ${['语文','数学','英语'].map(s => `
+          <div class="card" style="cursor:pointer" onclick="App.navigateTo('templates-subject','${s}模板',{subject:'${s}'})">
+            <div class="card-title">${s==='语文'?'📖':s==='数学'?'📐':'🌍'} ${s}模板</div>
+            <div class="card-subtitle">${s==='语文'?'古诗文默写·病句总结·作文素材':s==='数学'?'集合·函数·数列答题步骤':'完形阅读技巧·作文万能句式'}</div>
+          </div>`).join('')}
+      `;
+    },
+
+    'templates-subject': function (data) {
+      const temps = DB.get('templates').filter(t => t.subject === data.subject);
+      return temps.map(t => `
+        <div class="card" style="cursor:pointer" onclick="App.navigateTo('template-detail','模板详情',{t})">
+          <div class="card-title">${t.title}</div>
+          <div class="card-subtitle">${t.category}</div>
+        </div>`).join('');
+    },
+
+    'template-detail': function (data) {
+      const t = data.t;
+      return `
+        <div class="card">
+          <span class="tag tag-blue" style="margin-bottom:8px">${t.subject} · ${t.category}</span>
+          <div class="card-title">${t.title}</div>
+          <div style="font-size:14px;line-height:2;white-space:pre-line;margin-top:12px">${t.content}</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn btn-outline btn-block" onclick="App.toast('已收藏')">⭐ 收藏</button>
+          <button class="btn btn-primary btn-block" onclick="App.toast('已复制分享链接')">分享</button>
+        </div>
+      `;
+    },
+
+    // ERROR PAPER
+    'error-paper': function () {
+      const errorIds = DB.get('errorBook');
+      const errorQs = DB.get('questions').filter(q => errorIds.includes(q.id));
+      if (!errorQs.length) return '<div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-text">近1个月暂无错题</div></div>';
+      return `
+        <div class="card"><div class="card-title">❌ 错题专项组卷</div><div class="card-subtitle">系统自动汇总近1个月错题，生成专属试卷</div></div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:32px;font-weight:700;color:var(--primary)">${errorQs.length}</div>
+          <div style="font-size:14px;color:var(--text-secondary)">道错题</div>
+          <div style="margin-top:8px;font-size:13px">
+            ${['语文','数学','英语'].map(s => `${s}: ${errorQs.filter(q=>q.subject===s).length}题`).join(' | ')}
+          </div>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="App.startQuiz('error-paper',null,null)">📝 开始答题</button>
+        <button class="btn btn-outline btn-lg" style="margin-top:8px" onclick="App.toast('模拟打印导出功能')">🖨️ 打印导出</button>
+      `;
+    },
+
+    // SCORE QUERY
+    'score-query': function () {
+      return `
+        <div class="card"><div class="card-title">🔍 真题分数线查询</div><div class="card-subtitle">输入总分，查看近3年可报考院校</div></div>
+        <div class="card">
+          <div class="form-group"><label class="form-label">你的总分（450分制）</label>
+            <input class="form-input" id="sqScore" type="number" placeholder="输入总分" min="0" max="450" value="350">
+          </div>
+          <div class="form-group"><label class="form-label">地域筛选</label>
+            <select class="form-select" id="sqRegion"><option>全省</option><option>揭阳</option><option>粤东</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">专业筛选（可选）</label>
+            <input class="form-input" id="sqMajor" placeholder="如：计算机、学前教育">
+          </div>
+          <button class="btn btn-primary btn-lg" onclick="App.queryScoreLines()">查询</button>
+        </div>
+        <div id="sqResult"></div>
+      `;
+    },
+
+    // ADMIN LOGIN
+    'admin-login': function () {
+      return `
+        <div class="login-container">
+          <div class="login-logo">🔐</div>
+          <div class="login-title">管理后台登录</div>
+          <div class="login-subtitle">请输入管理员账号和密码</div>
+          <div class="card" style="width:100%">
+            <div class="form-group"><label class="form-label">用户名</label>
+              <input class="form-input" id="adminUser" placeholder="请输入用户名" value="admin">
+            </div>
+            <div class="form-group"><label class="form-label">密码</label>
+              <input class="form-input" id="adminPass" type="password" placeholder="请输入密码" value="admin123">
+            </div>
+            <button class="btn btn-primary btn-lg" onclick="App.adminLogin()">登录</button>
+          </div>
+          <button class="btn btn-outline" style="margin-top:16px" onclick="App.switchTab('home')">返回学生端</button>
+        </div>
+      `;
+    },
+
+    // ADMIN HOME
+    'admin-home': function () {
+      return `
+        <div class="card"><div class="card-title">📊 管理后台</div><div class="card-subtitle">欢迎回来，管理员</div></div>
+        <div class="admin-menu">
+          ${[
+            {icon:'📂',title:'资料管理',page:'admin-materials'},
+            {icon:'📝',title:'题库管理',page:'admin-questions'},
+            {icon:'📚',title:'单词管理',page:'admin-words'},
+            {icon:'📋',title:'答题模板管理',page:'admin-templates'},
+            {icon:'📊',title:'分数线管理',page:'admin-score-lines'},
+            {icon:'✏️',title:'作文素材管理',page:'admin-essay'},
+            {icon:'📰',title:'政策解读管理',page:'admin-policy'},
+          ].map(m => `
+            <div class="admin-menu-item" onclick="App.navigateTo('${m.page}','${m.title}')">
+              <div class="admin-menu-item-icon">${m.icon}</div>
+              <div class="admin-menu-item-title">${m.title}</div>
+            </div>`).join('')}
+        </div>
+      `;
+    },
+
+    // ADMIN MATERIALS
+    'admin-materials': function () {
+      const mats = DB.get('materials');
+      return `
+        <button class="btn btn-primary btn-block" style="margin-bottom:12px" onclick="App.navigateTo('admin-material-add','新增资料')">+ 上传资料</button>
+        ${!mats.length ? '<div class="empty-state"><div class="empty-state-text">暂无资料</div></div>' :
+        `<table class="data-table"><tr><th>名称</th><th>类型</th><th>分类</th><th>时间</th><th>操作</th></tr>
+        ${mats.map(m => `<tr>
+          <td>${m.name}</td><td>${m.type}</td><td>${m.category}</td><td>${m.uploadTime}</td>
+          <td><button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-material-edit','编辑资料',{m})">编辑</button>
+          <button class="btn btn-sm btn-danger" onclick="App.adminDeleteMaterial(${m.id})">删除</button></td>
+        </tr>`).join('')}</table>`}
+      `;
+    },
+
+    'admin-material-add': function () {
+      return `
+        <div class="card">
+          <div class="form-group"><label class="form-label">资料名称</label><input class="form-input" id="amName"></div>
+          <div class="form-group"><label class="form-label">文件类型</label>
+            <select class="form-select" id="amType"><option>PDF</option><option>Word</option><option>图片</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">分类</label>
+            <select class="form-select" id="amCat"><option>语文资料</option><option>数学资料</option><option>英语资料</option><option>真题套卷</option><option>模拟试卷</option><option>知识总结</option><option>其他</option></select>
+          </div>
+          <button class="btn btn-primary btn-lg" onclick="App.adminAddMaterial()">上传</button>
+        </div>
+      `;
+    },
+
+    'admin-material-edit': function (data) {
+      const m = data.m;
+      return `
+        <div class="card">
+          <div class="form-group"><label class="form-label">资料名称</label><input class="form-input" id="amNameE" value="${m.name}"></div>
+          <div class="form-group"><label class="form-label">分类</label>
+            <select class="form-select" id="amCatE">${['语文资料','数学资料','英语资料','真题套卷','模拟试卷','知识总结','其他'].map(c => `<option ${c===m.category?'selected':''}>${c}</option>`).join('')}</select>
+          </div>
+          <button class="btn btn-primary btn-lg" onclick="App.adminEditMaterial(${m.id})">保存</button>
+        </div>
+      `;
+    },
+
+    // ADMIN QUESTIONS
+    'admin-questions': function () {
+      const qs = DB.get('questions');
+      return `
+        <button class="btn btn-primary btn-block" style="margin-bottom:12px" onclick="App.navigateTo('admin-question-add','新增题目')">+ 新增题目</button>
+        ${['语文','数学','英语'].map(s => `<div class="filter-chip" style="margin-right:6px;cursor:pointer" onclick="App.filterAdminQuestions('${s}',this)">${s}</div>`).join('')}
+        <div style="height:8px"></div>
+        ${qs.map(q => `
+          <div class="card" data-subject="${q.subject}">
+            <div style="display:flex;align-items:center;gap:8px"><span class="tag tag-blue">${q.subject}</span><span class="tag tag-orange">${q.type}</span><span style="font-size:12px;color:var(--text-light)">${q.category}</span>
+            <span style="flex:1"></span>
+            <button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-question-edit','编辑题目',{q})">编辑</button>
+            <button class="btn btn-sm btn-danger" onclick="App.adminDeleteQuestion(${q.id})">删除</button></div>
+            <div style="font-size:14px;margin-top:6px">${q.stem.substring(0,40)}...</div>
+          </div>`).join('')}
+      `;
+    },
+
+    'admin-question-add': function () {
+      return App._adminQuestionForm(null);
+    },
+
+    'admin-question-edit': function (data) {
+      return App._adminQuestionForm(data.q);
+    },
+
+    // ADMIN WORDS
+    'admin-words': function () {
+      const ws = DB.get('words');
+      return `
+        <button class="btn btn-primary btn-block" style="margin-bottom:12px" onclick="App.navigateTo('admin-word-add','新增单词')">+ 新增单词</button>
+        <table class="data-table"><tr><th>单词</th><th>词义</th><th>操作</th></tr>
+        ${ws.slice(0,30).map(w => `<tr>
+          <td style="font-weight:500">${w.word}</td><td>${w.meaning}</td>
+          <td><button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-word-edit','编辑单词',{w})">编辑</button>
+          <button class="btn btn-sm btn-danger" onclick="App.adminDeleteWord(${w.id})">删除</button></td>
+        </tr>`).join('')}</table>
+        <div style="text-align:center;padding:12px;color:var(--text-light);font-size:13px">共 ${ws.length} 个单词 | 显示前30个</div>
+      `;
+    },
+
+    'admin-word-add': function () {
+      return `
+        <div class="card">
+          <div class="form-group"><label class="form-label">单词</label><input class="form-input" id="awWord"></div>
+          <div class="form-group"><label class="form-label">词义</label><input class="form-input" id="awMeaning"></div>
+          <div class="form-group"><label class="form-label">发音（可选）</label><input class="form-input" id="awPhonetic" placeholder="如：/əˈbændən/"></div>
+          <button class="btn btn-primary btn-lg" onclick="App.adminAddWord()">保存</button>
+        </div>
+      `;
+    },
+
+    'admin-word-edit': function (data) {
+      const w = data.w;
+      return `
+        <div class="card">
+          <div class="form-group"><label class="form-label">单词</label><input class="form-input" id="awWordE" value="${w.word}"></div>
+          <div class="form-group"><label class="form-label">词义</label><input class="form-input" id="awMeaningE" value="${w.meaning}"></div>
+          <button class="btn btn-primary btn-lg" onclick="App.adminEditWord(${w.id})">保存</button>
+        </div>
+      `;
+    },
+
+    // ADMIN TEMPLATES
+    'admin-templates': function () {
+      const temps = DB.get('templates');
+      return `
+        <button class="btn btn-primary btn-block" style="margin-bottom:12px" onclick="App.navigateTo('admin-template-add','新增模板')">+ 新增模板</button>
+        ${temps.map(t => `
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:8px"><span class="tag tag-blue">${t.subject}</span><span class="tag tag-orange">${t.category}</span>
+            <span style="flex:1"></span>
+            <button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-template-edit','编辑模板',{t})">编辑</button>
+            <button class="btn btn-sm btn-danger" onclick="App.adminDeleteTemplate(${t.id})">删除</button></div>
+            <div style="font-size:14px;font-weight:500;margin-top:4px">${t.title}</div>
+          </div>`).join('')}
+      `;
+    },
+
+    'admin-template-add': function () {
+      return App._adminTemplateForm(null);
+    },
+
+    'admin-template-edit': function (data) {
+      return App._adminTemplateForm(data.t);
+    },
+
+    // ADMIN SCORE LINES
+    'admin-score-lines': function () {
+      const sls = DB.get('scoreLines');
+      return `
+        <button class="btn btn-primary btn-block" style="margin-bottom:12px" onclick="App.navigateTo('admin-score-add','新增分数线')">+ 新增分数线数据</button>
+        <table class="data-table"><tr><th>院校</th><th>专业</th><th>年份</th><th>批次</th><th>分数</th><th>操作</th></tr>
+        ${sls.map(sl => `<tr>
+          <td>${sl.college}</td><td>${sl.major}</td><td>${sl.year}</td><td>${sl.batch}</td><td style="font-weight:600">${sl.score}</td>
+          <td><button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-score-edit','编辑分数线',{sl})">编辑</button>
+          <button class="btn btn-sm btn-danger" onclick="App.adminDeleteScoreLine(${sl.id})">删除</button></td>
+        </tr>`).join('')}</table>
+      `;
+    },
+
+    'admin-score-add': function () {
+      return App._adminScoreForm(null);
+    },
+
+    'admin-score-edit': function (data) {
+      return App._adminScoreForm(data.sl);
+    },
+
+    // ADMIN ESSAY
+    'admin-essay': function () {
+      const mats = DB.get('essayMaterials');
+      return `
+        <button class="btn btn-primary btn-block" style="margin-bottom:8px" onclick="App.navigateTo('admin-essay-add','新增素材')">+ 新增素材</button>
+        <button class="btn btn-success btn-block" style="margin-bottom:12px" onclick="App.syncEssay()">🔄 一键同步素材</button>
+        ${!mats.length ? '<div class="empty-state"><div class="empty-state-text">暂无素材</div></div>' :
+        mats.map(m => `
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:8px"><span class="tag ${m.type==='语文时事素材'?'tag-blue':'tag-green'}">${m.type}</span><span style="font-size:12px;color:var(--text-light)">${m.date}</span>
+            <span style="flex:1"></span>
+            <button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-essay-edit','编辑素材',{m})">编辑</button>
+            <button class="btn btn-sm btn-danger" onclick="App.adminDeleteEssay(${m.id})">删除</button></div>
+            <div style="font-size:14px;font-weight:500;margin-top:4px">${m.title}</div>
+          </div>`).join('')}
+      `;
+    },
+
+    'admin-essay-add': function () {
+      return `
+        <div class="card">
+          <div class="form-group"><label class="form-label">类型</label>
+            <select class="form-select" id="aeType"><option>语文时事素材</option><option>英语作文万能句</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">标题</label><input class="form-input" id="aeTitle"></div>
+          <div class="form-group"><label class="form-label">内容</label><textarea class="form-textarea" id="aeContent" rows="4"></textarea></div>
+          <div class="form-group"><label class="form-label">发布日期</label><input class="form-input" id="aeDate" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
+          <button class="btn btn-primary btn-lg" onclick="App.adminAddEssay()">保存</button>
+        </div>
+      `;
+    },
+
+    'admin-essay-edit': function (data) {
+      const m = data.m;
+      return `
+        <div class="card">
+          <div class="form-group"><label class="form-label">类型</label>
+            <select class="form-select" id="aeTypeE">${['语文时事素材','英语作文万能句'].map(t => `<option ${t===m.type?'selected':''}>${t}</option>`).join('')}</select>
+          </div>
+          <div class="form-group"><label class="form-label">标题</label><input class="form-input" id="aeTitleE" value="${m.title}"></div>
+          <div class="form-group"><label class="form-label">内容</label><textarea class="form-textarea" id="aeContentE" rows="4">${m.content}</textarea></div>
+          <div class="form-group"><label class="form-label">发布日期</label><input class="form-input" id="aeDateE" type="date" value="${m.date}"></div>
+          <button class="btn btn-primary btn-lg" onclick="App.adminEditEssay(${m.id})">保存</button>
+        </div>
+      `;
+    },
+
+    // ADMIN POLICY
+    'admin-policy': function () {
+      const ps = DB.get('policies');
+      return `
+        <button class="btn btn-primary btn-block" style="margin-bottom:8px" onclick="App.navigateTo('admin-policy-add','新增政策')">+ 新增政策</button>
+        <button class="btn btn-success btn-block" style="margin-bottom:12px" onclick="App.syncPolicy()">🔄 一键同步政策</button>
+        ${!ps.length ? '<div class="empty-state"><div class="empty-state-text">暂无政策</div></div>' :
+        ps.map(p => `
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--text-light)">${p.date}</span>
+            <span style="flex:1"></span>
+            <button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-policy-edit','编辑政策',{p})">编辑</button>
+            <button class="btn btn-sm btn-danger" onclick="App.adminDeletePolicy(${p.id})">删除</button></div>
+            <div style="font-size:14px;font-weight:500;margin-top:4px">${p.title}</div>
+          </div>`).join('')}
+      `;
+    },
+
+    'admin-policy-add': function () {
+      return `
+        <div class="card">
+          <div class="form-group"><label class="form-label">标题</label><input class="form-input" id="apTitle"></div>
+          <div class="form-group"><label class="form-label">内容</label><textarea class="form-textarea" id="apContent" rows="4" placeholder="使用通俗语言拆解政策，便于学生理解"></textarea></div>
+          <div class="form-group"><label class="form-label">发布日期</label><input class="form-input" id="apDate" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
+          <button class="btn btn-primary btn-lg" onclick="App.adminAddPolicy()">保存</button>
+        </div>
+      `;
+    },
+
+    'admin-policy-edit': function (data) {
+      const p = data.p;
+      return `
+        <div class="card">
+          <div class="form-group"><label class="form-label">标题</label><input class="form-input" id="apTitleE" value="${p.title}"></div>
+          <div class="form-group"><label class="form-label">内容</label><textarea class="form-textarea" id="apContentE" rows="4">${p.content}</textarea></div>
+          <div class="form-group"><label class="form-label">发布日期</label><input class="form-input" id="apDateE" type="date" value="${p.date}"></div>
+          <button class="btn btn-primary btn-lg" onclick="App.adminEditPolicy(${p.id})">保存</button>
+        </div>
+      `;
+    },
+  },
+
+  // ===== HELPERS =====
+  _statCard(label, value, color) {
+    return `<div class="stat-card"><div class="stat-value" style="color:${color}">${value}</div><div class="stat-label">${label}</div></div>`;
+  },
+
+  _listItem(icon, title, subtitle, onclick) {
+    return `<div class="list-item" onclick="(${onclick.toString()})()">
+      <div class="list-item-icon" style="background:var(--primary-light)">${icon}</div>
+      <div class="list-item-content"><div class="list-item-title">${title}</div><div class="list-item-subtitle">${subtitle}</div></div>
+      <div class="list-item-arrow">›</div></div>`;
+  },
+
+  _planPhase(title, content, color) {
+    return `<div class="plan-phase" style="border-left-color:${color}">
+      <div class="plan-phase-title" style="color:${color}">${title}</div>
+      <div class="plan-phase-content">${content}</div></div>`;
+  },
+
+  // ===== QUIZ LOGIC =====
+  startQuiz(mode, subject, category) {
+    let questions = DB.get('questions');
+    if (mode === 'special') {
+      questions = questions.filter(q => q.subject === subject && (category === 'all' || q.category === category));
+    } else if (mode === 'mock') {
+      questions = questions.filter(q => q.subject === subject);
+    } else if (mode === 'error-paper') {
+      const errorIds = DB.get('errorBook');
+      questions = questions.filter(q => errorIds.includes(q.id));
+    }
+    questions = questions.sort(() => Math.random() - 0.5);
+    if (!questions.length) { App.toast('暂无题目'); return; }
+    App.quizMode = mode;
+    App.quizQuestions = questions;
+    App.quizIndex = 0;
+    App.quizAnswers = {};
+    App.quizResult = null;
+    App.navigateTo('quiz-answer', mode === 'mock' ? '全真模拟' : '答题');
+  },
+
+  selectAnswer(idx) {
+    App.quizAnswers[App.quizQuestions[App.quizIndex].id] = idx;
+    App.renderPage('quiz-answer');
+  },
+
+  nextQuestion() {
+    if (App.quizIndex < App.quizQuestions.length - 1) {
+      App.quizIndex++;
+      App.renderPage('quiz-answer');
+    } else {
+      App.submitQuiz();
+    }
+  },
+
+  prevQuestion() {
+    if (App.quizIndex > 0) { App.quizIndex--; App.renderPage('quiz-answer'); }
+  },
+
+  jumpToQuestion(idx) {
+    App.quizIndex = idx;
+    App.renderPage('quiz-answer');
+  },
+
+  submitQuiz() {
+    let correct = 0, wrong = 0;
+    App.quizQuestions.forEach(q => {
+      if (App.quizAnswers[q.id] === q.answer) { correct++; }
+      else { wrong++; DB.addError(q.id); }
+    });
+    const total = App.quizQuestions.length;
+    const score = App.quizMode === 'mock' ? Math.round(correct / total * 150) : Math.round(correct / total * 100);
+    App.quizResult = { correct, wrong, score, mode: App.quizMode };
+    // Update stats
+    const stats = DB.get('studyStats');
+    stats.totalQuestions += total;
+    stats.correctQuestions += correct;
+    App.quizQuestions.forEach(q => {
+      if (!stats.subjectStats[q.subject]) stats.subjectStats[q.subject] = { total: 0, correct: 0 };
+      stats.subjectStats[q.subject].total++;
+      if (App.quizAnswers[q.id] === q.answer) stats.subjectStats[q.subject].correct++;
+    });
+    DB.set('studyStats', stats);
+    App.navigateTo('quiz-result', '答题结果');
+  },
+
+  toggleFavFromResult(qId, btn) {
+    const isFav = DB.toggleFav(qId);
+    btn.textContent = isFav ? '⭐ 已收藏' : '☆ 收藏';
+    btn.className = 'btn btn-sm ' + (isFav ? 'btn-primary' : 'btn-outline');
+  },
+
+  // ===== ERROR BOOK =====
+  filterErrors(subject, el) {
+    document.querySelectorAll('#errorFilter .filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('#errorList .card').forEach(c => {
+      c.style.display = subject === 'all' || c.dataset.subject === subject ? '' : 'none';
+    });
+  },
+
+  checkErrorRedo(el, userIdx, correctIdx) {
+    document.querySelectorAll('#errorRedo .quiz-option').forEach(o => o.style.pointerEvents = 'none');
+    el.classList.add(userIdx === correctIdx ? 'correct' : 'wrong');
+    const resultEl = document.getElementById('errorRedoResult');
+    const textEl = document.getElementById('errorRedoText');
+    resultEl.style.display = '';
+    textEl.textContent = userIdx === correctIdx ? '✅ 回答正确！' : `❌ 回答错误，正确答案是：${'ABCD'[correctIdx]}`;
+    textEl.style.color = userIdx === correctIdx ? 'var(--success)' : 'var(--danger)';
+  },
+
+  // ===== FAVORITES =====
+  removeFav(qId) {
+    const favs = DB.get('favorites').filter(id => id !== qId);
+    DB.set('favorites', favs);
+  },
+
+  // ===== MATERIALS =====
+  searchMaterials(keyword) {
+    const kw = keyword.toLowerCase();
+    document.querySelectorAll('#matList .card').forEach(c => {
+      c.style.display = !kw || c.dataset.name.toLowerCase().includes(kw) ? '' : 'none';
+    });
+  },
+
+  filterMaterials(cat, el) {
+    document.querySelectorAll('#matFilter .filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('#matList .card').forEach(c => {
+      c.style.display = cat === '全部' || c.dataset.cat === cat ? '' : 'none';
+    });
+  },
+
+  // ===== ESSAY =====
+  filterEssays(type, el) {
+    document.querySelectorAll('#essayFilter .filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('#essayList .card').forEach(c => {
+      c.style.display = type === 'all' || c.dataset.type === type ? '' : 'none';
+    });
+  },
+
+  // ===== TIMER =====
+  startTimer(subject, minutes) {
+    App.timerSubject = subject;
+    App.timerSeconds = minutes * 60;
+    App.timerRunning = true;
+    document.getElementById('timerDisplay').style.display = '';
+    App._updateTimerDisplay();
+    if (App.timerInterval) clearInterval(App.timerInterval);
+    App.timerInterval = setInterval(() => {
+      App.timerSeconds--;
+      App._updateTimerDisplay();
+      if (App.timerSeconds <= 0) {
+        clearInterval(App.timerInterval);
+        App.timerRunning = false;
+        App.toast('⏰ 时间到！请停止答题');
+        alert('⏰ 模考时间到！请提交答卷。');
+      }
+    }, 1000);
+  },
+
+  stopTimer() {
+    if (confirm('确定要停止计时吗？计时数据将不会保存。')) {
+      clearInterval(App.timerInterval);
+      App.timerRunning = false;
+      document.getElementById('timerDisplay').style.display = 'none';
+      App.toast('计时已停止');
+    }
+  },
+
+  _updateTimerDisplay() {
+    const m = Math.floor(App.timerSeconds / 60);
+    const s = App.timerSeconds % 60;
+    const display = document.getElementById('timerClock');
+    const label = document.getElementById('timerLabel');
+    if (display) display.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (label) label.textContent = `${App.timerSubject} · ${Math.ceil(App.timerSeconds / 60)}分钟`;
+    const timerEl = document.getElementById('timerDisplay');
+    if (timerEl) {
+      timerEl.className = App.timerSeconds < 300 ? 'timer-danger' : App.timerSeconds < 600 ? 'timer-warning' : '';
+    }
+  },
+
+  // ===== COMMUNITY =====
+  filterCommunity(board, el) {
+    document.querySelectorAll('#communityTabs .tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('#communityList .post-card').forEach(c => {
+      c.style.display = board === 'all' || c.dataset.board === board ? '' : 'none';
+    });
+  },
+
+  submitPost() {
+    const board = document.getElementById('postBoard').value;
+    const title = document.getElementById('postTitle').value.trim();
+    const content = document.getElementById('postContent').value.trim();
+    if (!title || !content) { App.toast('请填写标题和内容'); return; }
+    const posts = DB.get('posts');
+    posts.push({
+      id: Date.now(), board, title, content,
+      author: DB.get('user').nickname,
+      time: new Date().toLocaleString('zh-CN'),
+      replies: [],
+    });
+    DB.set('posts', posts);
+    App.toast('发布成功！');
+    App.goBack();
+  },
+
+  // ===== PLAN =====
+  generatePlan() {
+    const chinese = parseInt(document.getElementById('pf-chinese').value) || 0;
+    const math = parseInt(document.getElementById('pf-math').value) || 0;
+    const english = parseInt(document.getElementById('pf-english').value) || 0;
+    const target = parseInt(document.getElementById('pf-target').value) || 0;
+    const weekday = parseInt(document.getElementById('pf-weekday').value) || 0;
+    const weekend = parseInt(document.getElementById('pf-weekend').value) || 0;
+    const books = document.getElementById('pf-books').value || '';
+    const weakness = document.getElementById('pf-weakness').value || '';
+
+    if (chinese > 150 || math > 150 || english > 150) { App.toast('单科成绩不能超过150分'); return; }
+    if (target > 450) { App.toast('目标总分不能超过450分'); return; }
+    if (!chinese && !math && !english) { App.toast('请至少填写一科成绩'); return; }
+
+    const currentTotal = chinese + math + english;
+    const gap = target - currentTotal;
+    const minSubject = [{s:'语文',v:chinese},{s:'数学',v:math},{s:'英语',v:english}].sort((a,b)=>a.v-b.v)[0].s;
+
+    const plan = {
+      targetScore: target,
+      phase1: `📅 时间：现在 - 2026年10月底\n📌 目标：夯实基础，查漏补缺\n\n每周任务：\n• 工作日每天学习 ${weekday} 小时，周末每天 ${weekend} 小时\n• 语文：每周完成2套古诗文默写，积累3个作文素材\n• 数学：系统复习${minSubject==='数学'?'（重点）':''}集合、函数、数列基础概念，每日5道基础题\n• 英语：每日背诵10个高频词，每周2篇完形填空\n\n阶段检验目标：总分达到 ${Math.round(currentTotal + gap * 0.3)} 分`,
+      phase2: `📅 时间：2026年11月 - 12月中旬\n📌 目标：强化刷题，提升速度和准确率\n\n每周任务：\n• 工作日每天学习 ${weekday + 0.5} 小时，周末每天 ${weekend} 小时\n• 语文：每天1套选择题专项，每周1篇作文练习\n• 数学：每日10道专项练习，重点突破${minSubject==='数学'?'函数综合题':''}中等难度题\n• 英语：每日15个高频词，每周3篇阅读理解\n• 每两周做一次真题自测\n\n阶段检验目标：总分达到 ${Math.round(currentTotal + gap * 0.65)} 分`,
+      phase3: `📅 时间：2026年12月中旬 - 2027年1月考试\n📌 目标：真题冲刺，全真模考\n\n每周任务：\n• 工作日每天学习 ${weekday + 1} 小时，周末每天 ${weekend + 1} 小时\n• 每周完成2套真题全真模考\n• 重点复习错题本中的高频错题\n• 考前一周：回归基础，调整心态\n• 考前三天：只做轻松复习，保证充足睡眠\n\n最终目标：总分达到 ${target} 分`,
+      tips: `1. 广东学考题型相对固定，历年真题是最宝贵的复习资料\n2. 不要盲目刷难题，学考题以中低档题为主\n3. ${minSubject}是你相对薄弱的科目，建议多分配复习时间\n4. 日语考生请注意：部分专业可能限制英语\n5. 征集补录是重要机会，即使常规批不理想也不要放弃\n6. 合理使用教辅：${books || '建议搭配真题汇编和专项训练册'}`,
+    };
+    DB.set('studyPlan', plan);
+    App.toast('备考方案已生成！');
+    App.navigateTo('plan-view', '学习计划');
+  },
+
+  // ===== SCORE QUERY =====
+  queryScoreLines() {
+    const score = parseInt(document.getElementById('sqScore').value) || 0;
+    const region = document.getElementById('sqRegion').value;
+    const major = document.getElementById('sqMajor').value.toLowerCase();
+    if (!score) { App.toast('请输入总分'); return; }
+    let sls = DB.get('scoreLines').filter(sl => sl.score <= score);
+    if (region !== '全省') sls = sls.filter(sl => sl.region === region || sl.region === '全省');
+    if (major) sls = sls.filter(sl => sl.major.includes(major));
+    const resultEl = document.getElementById('sqResult');
+    if (!sls.length) {
+      resultEl.innerHTML = '<div class="empty-state"><div class="empty-state-text" style="margin-top:16px">暂无符合条件的院校专业</div></div>';
+      return;
+    }
+    resultEl.innerHTML = `
+      <div style="margin-top:16px;font-weight:600;font-size:15px">查询结果（${sls.length}条）</div>
+      ${sls.map(sl => `
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div><div style="font-size:15px;font-weight:600">${sl.college}</div><div style="font-size:13px;color:var(--text-secondary)">${sl.major}</div></div>
+            <div style="text-align:right"><div style="font-size:18px;font-weight:700;color:var(--primary)">${sl.score}</div><div style="font-size:11px;color:var(--text-light)">录取分数</div></div>
+          </div>
+          <div style="margin-top:4px;display:flex;gap:6px">
+            <span class="tag ${sl.property==='公办'?'tag-green':'tag-orange'}">${sl.property}</span>
+            <span class="tag tag-blue">${sl.batch}</span>
+            <span class="tag">${sl.year}</span>
+            <span class="tag">${sl.region}</span>
+          </div>
+        </div>`).join('')}`;
+  },
+
+  // ===== WORDS GAME =====
+  _wordsGame(mode) {
+    const words = DB.get('words').slice(0, 20).sort(() => Math.random() - 0.5);
+    const currentWord = words[0];
+    if (!currentWord) return '<div class="empty-state"><div class="empty-state-icon">📚</div><div class="empty-state-text">单词库加载中...</div></div>';
+    const allWords = words.slice(0, 4);
+    const question = mode === 'challenge' ? currentWord.word : currentWord.meaning;
+    const options = allWords.map(w => mode === 'challenge' ? w.meaning : w.word).sort(() => Math.random() - 0.5);
+    return `
+      <div class="card" style="text-align:center">
+        <div class="card-subtitle">${mode === 'challenge' ? '看单词选词义' : '看词义选单词'}</div>
+        <div style="font-size:28px;font-weight:700;margin:20px 0;color:var(--primary)">${question}</div>
+        <div style="font-size:13px;color:var(--text-light);margin-bottom:16px">1 / ${words.length}</div>
+        ${options.map((o, i) => `
+          <div class="quiz-option" onclick="App.checkWordAnswer(this,'${o}','${mode==='challenge'?currentWord.meaning:currentWord.word}',${words.length})">
+            <div class="quiz-option-marker">${'ABCD'[i]}</div>
+            <span>${o}</span>
+          </div>`).join('')}
+      </div>
+    `;
+  },
+
+  checkWordAnswer(el, userAns, correctAns, total) {
+    document.querySelectorAll('#mainContent .quiz-option').forEach(o => o.style.pointerEvents = 'none');
+    const isCorrect = userAns === correctAns;
+    el.classList.add(isCorrect ? 'correct' : 'wrong');
+    // Highlight correct one
+    document.querySelectorAll('#mainContent .quiz-option').forEach(o => {
+      if (o.textContent.trim().includes(correctAns)) o.classList.add('correct');
+    });
+    const stats = DB.get('studyStats');
+    stats.wordProgress.learned = Math.min(stats.wordProgress.learned + 1, stats.wordProgress.total);
+    DB.set('studyStats', stats);
+    setTimeout(() => {
+      App.toast(isCorrect ? '✅ 正确！' : '❌ 错误');
+      App.renderPage('words-tool');
+    }, 1000);
+  },
+
+  // ===== ADMIN ACTIONS =====
+  adminLogin() {
+    const user = document.getElementById('adminUser').value;
+    const pass = document.getElementById('adminPass').value;
+    const admin = DB.get('admin');
+    if (user === admin.username && pass === admin.password) {
+      App.adminLoggedIn = true;
+      App.isAdmin = true;
+      document.getElementById('headerAction').textContent = '学生端';
+      document.getElementById('headerAction').style.display = '';
+      document.getElementById('bottomNav').style.display = 'none';
+      App.pageStack = [];
+      App.navigateTo('admin-home', '管理后台');
+      App.toast('登录成功');
+    } else {
+      App.toast('用户名或密码错误');
+    }
+  },
+
+  adminAddMaterial() {
+    const name = document.getElementById('amName').value.trim();
+    const type = document.getElementById('amType').value;
+    const cat = document.getElementById('amCat').value;
+    if (!name) { App.toast('请填写资料名称'); return; }
+    const mats = DB.get('materials');
+    mats.push({ id: Date.now(), name, type, category: cat, uploadTime: new Date().toISOString().split('T')[0] });
+    DB.set('materials', mats);
+    App.toast('上传成功');
+    App.goBack();
+  },
+
+  adminEditMaterial(id) {
+    const name = document.getElementById('amNameE').value.trim();
+    const cat = document.getElementById('amCatE').value;
+    if (!name) { App.toast('请填写资料名称'); return; }
+    const mats = DB.get('materials');
+    const idx = mats.findIndex(m => m.id === id);
+    if (idx >= 0) { mats[idx].name = name; mats[idx].category = cat; }
+    DB.set('materials', mats);
+    App.toast('保存成功');
+    App.goBack();
+  },
+
+  adminDeleteMaterial(id) {
+    if (!confirm('确定删除该资料？')) return;
+    const mats = DB.get('materials').filter(m => m.id !== id);
+    DB.set('materials', mats);
+    App.toast('删除成功');
+    App.renderPage(App.currentPage);
+  },
+
+  _adminQuestionForm(q) {
+    const isEdit = !!q;
+    const id = isEdit ? q.id : '';
+    return `
+      <div class="card">
+        <div class="form-group"><label class="form-label">科目</label>
+          <select class="form-select" id="aqSubject">${['语文','数学','英语'].map(s => `<option ${isEdit&&q.subject===s?'selected':''}>${s}</option>`).join('')}</select>
+        </div>
+        <div class="form-group"><label class="form-label">题型</label>
+          <select class="form-select" id="aqType">${['单选','多选','阅读理解'].map(t => `<option ${isEdit&&q.type===t?'selected':''}>${t}</option>`).join('')}</select>
+        </div>
+        <div class="form-group"><label class="form-label">分类</label>
+          <input class="form-input" id="aqCategory" value="${isEdit?q.category:''}" placeholder="如：函数、古诗文、词汇">
+        </div>
+        <div class="form-group"><label class="form-label">题干</label>
+          <textarea class="form-textarea" id="aqStem" rows="3">${isEdit?q.stem:''}</textarea>
+        </div>
+        <div class="form-group"><label class="form-label">选项（换行分隔）</label>
+          <textarea class="form-textarea" id="aqOptions" rows="4">${isEdit?q.options.join('\n'):''}</textarea>
+        </div>
+        <div class="form-group"><label class="form-label">正确答案（选项序号，0=A,1=B...）</label>
+          <input class="form-input" id="aqAnswer" type="number" min="0" max="3" value="${isEdit?q.answer:0}">
+        </div>
+        <div class="form-group"><label class="form-label">解析</label>
+          <textarea class="form-textarea" id="aqAnalysis" rows="2">${isEdit?q.analysis:''}</textarea>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="App.adminSaveQuestion('${id}')">${isEdit?'保存修改':'新增题目'}</button>
+      </div>
+    `;
+  },
+
+  adminSaveQuestion(id) {
+    const subject = document.getElementById('aqSubject').value;
+    const type = document.getElementById('aqType').value;
+    const category = document.getElementById('aqCategory').value.trim();
+    const stem = document.getElementById('aqStem').value.trim();
+    const options = document.getElementById('aqOptions').value.trim().split('\n').filter(Boolean);
+    const answer = parseInt(document.getElementById('aqAnswer').value);
+    const analysis = document.getElementById('aqAnalysis').value.trim();
+    if (!stem || !options.length) { App.toast('请填写完整信息'); return; }
+    const qs = DB.get('questions');
+    if (id) {
+      const idx = qs.findIndex(q => q.id === parseInt(id));
+      if (idx >= 0) Object.assign(qs[idx], { subject, type, category, stem, options, answer, analysis });
+    } else {
+      qs.push({ id: Date.now(), subject, type, category, stem, options, answer, analysis });
+    }
+    DB.set('questions', qs);
+    App.toast(id ? '修改成功' : '新增成功');
+    App.goBack();
+  },
+
+  adminDeleteQuestion(id) {
+    if (!confirm('确定删除该题目？')) return;
+    DB.set('questions', DB.get('questions').filter(q => q.id !== id));
+    App.toast('删除成功');
+    App.renderPage(App.currentPage);
+  },
+
+  filterAdminQuestions(subject, el) {
+    document.querySelectorAll('#mainContent .card[data-subject]').forEach(c => {
+      c.style.display = c.dataset.subject === subject ? '' : 'none';
+    });
+    el.style.background = 'var(--primary)'; el.style.color = '#fff';
+  },
+
+  adminAddWord() {
+    const word = document.getElementById('awWord').value.trim();
+    const meaning = document.getElementById('awMeaning').value.trim();
+    const phonetic = document.getElementById('awPhonetic').value.trim();
+    if (!word || !meaning) { App.toast('请填写完整'); return; }
+    const ws = DB.get('words');
+    ws.push({ id: Date.now(), word, meaning, phonetic });
+    DB.set('words', ws);
+    App.toast('新增成功');
+    App.goBack();
+  },
+
+  adminEditWord(id) {
+    const word = document.getElementById('awWordE').value.trim();
+    const meaning = document.getElementById('awMeaningE').value.trim();
+    if (!word || !meaning) { App.toast('请填写完整'); return; }
+    const ws = DB.get('words');
+    const idx = ws.findIndex(w => w.id === id);
+    if (idx >= 0) { ws[idx].word = word; ws[idx].meaning = meaning; }
+    DB.set('words', ws);
+    App.toast('修改成功');
+    App.goBack();
+  },
+
+  adminDeleteWord(id) {
+    if (!confirm('确定删除？')) return;
+    DB.set('words', DB.get('words').filter(w => w.id !== id));
+    App.toast('删除成功');
+    App.renderPage(App.currentPage);
+  },
+
+  _adminTemplateForm(t) {
+    const isEdit = !!t;
+    return `
+      <div class="card">
+        <div class="form-group"><label class="form-label">科目</label>
+          <select class="form-select" id="atSubject">${['语文','数学','英语'].map(s => `<option ${isEdit&&t.subject===s?'selected':''}>${s}</option>`).join('')}</select>
+        </div>
+        <div class="form-group"><label class="form-label">分类</label>
+          <input class="form-input" id="atCategory" value="${isEdit?t.category:''}" placeholder="如：古诗文默写汇总">
+        </div>
+        <div class="form-group"><label class="form-label">标题</label>
+          <input class="form-input" id="atTitle" value="${isEdit?t.title:''}">
+        </div>
+        <div class="form-group"><label class="form-label">内容</label>
+          <textarea class="form-textarea" id="atContent" rows="4">${isEdit?t.content:''}</textarea>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="App.adminSaveTemplate('${isEdit?t.id:''}')">${isEdit?'保存修改':'新增模板'}</button>
+      </div>
+    `;
+  },
+
+  adminSaveTemplate(id) {
+    const subject = document.getElementById('atSubject').value;
+    const category = document.getElementById('atCategory').value.trim();
+    const title = document.getElementById('atTitle').value.trim();
+    const content = document.getElementById('atContent').value.trim();
+    if (!title || !content) { App.toast('请填写完整'); return; }
+    const temps = DB.get('templates');
+    if (id) {
+      const idx = temps.findIndex(t => t.id === parseInt(id));
+      if (idx >= 0) Object.assign(temps[idx], { subject, category, title, content });
+    } else {
+      temps.push({ id: Date.now(), subject, category, title, content });
+    }
+    DB.set('templates', temps);
+    App.toast(id ? '修改成功' : '新增成功');
+    App.goBack();
+  },
+
+  adminDeleteTemplate(id) {
+    if (!confirm('确定删除？')) return;
+    DB.set('templates', DB.get('templates').filter(t => t.id !== id));
+    App.toast('删除成功');
+    App.renderPage(App.currentPage);
+  },
+
+  _adminScoreForm(sl) {
+    const isEdit = !!sl;
+    return `
+      <div class="card">
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">年份</label><input class="form-input" id="asYear" type="number" value="${isEdit?sl.year:2024}"></div>
+          <div class="form-group"><label class="form-label">批次</label>
+            <select class="form-select" id="asBatch">${['常规批','补录批'].map(b => `<option ${isEdit&&sl.batch===b?'selected':''}>${b}</option>`).join('')}</select></div>
+        </div>
+        <div class="form-group"><label class="form-label">院校名称</label><input class="form-input" id="asCollege" value="${isEdit?sl.college:''}"></div>
+        <div class="form-group"><label class="form-label">专业名称</label><input class="form-input" id="asMajor" value="${isEdit?sl.major:''}"></div>
+        <div class="form-group"><label class="form-label">录取分数线</label><input class="form-input" id="asScore" type="number" value="${isEdit?sl.score:''}"></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">属性</label>
+            <select class="form-select" id="asProperty">${['公办','民办'].map(p => `<option ${isEdit&&sl.property===p?'selected':''}>${p}</option>`).join('')}</select></div>
+          <div class="form-group"><label class="form-label">地域</label>
+            <select class="form-select" id="asRegion">${['全省','揭阳','粤东'].map(r => `<option ${isEdit&&sl.region===r?'selected':''}>${r}</option>`).join('')}</select></div>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="App.adminSaveScoreLine('${isEdit?sl.id:''}')">${isEdit?'保存修改':'新增'}</button>
+      </div>
+    `;
+  },
+
+  adminSaveScoreLine(id) {
+    const year = parseInt(document.getElementById('asYear').value);
+    const batch = document.getElementById('asBatch').value;
+    const college = document.getElementById('asCollege').value.trim();
+    const major = document.getElementById('asMajor').value.trim();
+    const score = parseInt(document.getElementById('asScore').value);
+    const property = document.getElementById('asProperty').value;
+    const region = document.getElementById('asRegion').value;
+    if (!college || !major) { App.toast('请填写完整'); return; }
+    const sls = DB.get('scoreLines');
+    if (id) {
+      const idx = sls.findIndex(s => s.id === parseInt(id));
+      if (idx >= 0) Object.assign(sls[idx], { year, batch, college, major, score, property, region });
+    } else {
+      sls.push({ id: Date.now(), year, batch, college, major, score, property, region });
+    }
+    DB.set('scoreLines', sls);
+    App.toast(id ? '修改成功' : '新增成功');
+    App.goBack();
+  },
+
+  adminDeleteScoreLine(id) {
+    if (!confirm('确定删除？')) return;
+    DB.set('scoreLines', DB.get('scoreLines').filter(s => s.id !== id));
+    App.toast('删除成功');
+    App.renderPage(App.currentPage);
+  },
+
+  syncEssay() {
+    App.toast('🔄 正在同步素材...（模拟百度AI搜索）');
+    setTimeout(() => {
+      const mats = DB.get('essayMaterials');
+      const newItems = [
+        { id: Date.now(), type: '语文时事素材', title: '2026巴黎奥运会中国代表团创佳绩', content: '在2026年巴黎奥运会上，中国代表团取得优异成绩，展现了新时代中国体育健儿的风采。适用主题：拼搏精神、国家荣誉、青春奋斗。', date: new Date().toISOString().split('T')[0] },
+        { id: Date.now()+1, type: '英语作文万能句', title: '科技与生活万能表达', content: '1. With the rapid development of technology, our lives have been greatly changed.\n2. Artificial intelligence is playing an increasingly important role in various fields.\n3. Every coin has two sides, and technology is no exception.', date: new Date().toISOString().split('T')[0] },
+      ];
+      // Dedup
+      newItems.forEach(item => {
+        if (!mats.some(m => m.title === item.title)) mats.unshift(item);
+      });
+      DB.set('essayMaterials', mats);
+      App.toast('✅ 同步完成！新增素材已保存');
+      App.renderPage(App.currentPage);
+    }, 1500);
+  },
+
+  syncPolicy() {
+    App.toast('🔄 正在同步政策...（模拟百度AI搜索）');
+    setTimeout(() => {
+      const ps = DB.get('policies');
+      const newP = { id: Date.now(), title: '2027年广东省高职院校分类招生最新通知', content: '根据广东省教育考试院最新通知，2027年春季高考（依学考录取）工作安排如下：\n\n1. 学考报名时间：预计2026年11月\n2. 学考考试时间：预计2027年1月初\n3. 成绩公布：预计2027年2月\n4. 志愿填报：预计2027年3月\n5. 录取查询：预计2027年4月\n\n特别提醒：所有时间节点以广东省教育考试院官方通知为准，请考生密切关注。\n\n春考录取的学生与夏季高考录取的学生待遇完全一致，毕业证书完全相同。', date: new Date().toISOString().split('T')[0] };
+      if (!ps.some(p => p.title === newP.title)) ps.unshift(newP);
+      DB.set('policies', ps);
+      App.toast('✅ 同步完成！新政策已保存');
+      App.renderPage(App.currentPage);
+    }, 1500);
+  },
+
+  adminAddEssay() {
+    const type = document.getElementById('aeType').value;
+    const title = document.getElementById('aeTitle').value.trim();
+    const content = document.getElementById('aeContent').value.trim();
+    const date = document.getElementById('aeDate').value;
+    if (!title || !content) { App.toast('请填写完整'); return; }
+    const mats = DB.get('essayMaterials');
+    mats.unshift({ id: Date.now(), type, title, content, date });
+    DB.set('essayMaterials', mats);
+    App.toast('新增成功');
+    App.goBack();
+  },
+
+  adminEditEssay(id) {
+    const type = document.getElementById('aeTypeE').value;
+    const title = document.getElementById('aeTitleE').value.trim();
+    const content = document.getElementById('aeContentE').value.trim();
+    const date = document.getElementById('aeDateE').value;
+    if (!title || !content) { App.toast('请填写完整'); return; }
+    const mats = DB.get('essayMaterials');
+    const idx = mats.findIndex(m => m.id === id);
+    if (idx >= 0) Object.assign(mats[idx], { type, title, content, date });
+    DB.set('essayMaterials', mats);
+    App.toast('修改成功');
+    App.goBack();
+  },
+
+  adminDeleteEssay(id) {
+    if (!confirm('确定删除？')) return;
+    DB.set('essayMaterials', DB.get('essayMaterials').filter(m => m.id !== id));
+    App.toast('删除成功');
+    App.renderPage(App.currentPage);
+  },
+
+  adminAddPolicy() {
+    const title = document.getElementById('apTitle').value.trim();
+    const content = document.getElementById('apContent').value.trim();
+    const date = document.getElementById('apDate').value;
+    if (!title || !content) { App.toast('请填写完整'); return; }
+    const ps = DB.get('policies');
+    ps.unshift({ id: Date.now(), title, content, date });
+    DB.set('policies', ps);
+    App.toast('新增成功');
+    App.goBack();
+  },
+
+  adminEditPolicy(id) {
+    const title = document.getElementById('apTitleE').value.trim();
+    const content = document.getElementById('apContentE').value.trim();
+    const date = document.getElementById('apDateE').value;
+    if (!title || !content) { App.toast('请填写完整'); return; }
+    const ps = DB.get('policies');
+    const idx = ps.findIndex(p => p.id === id);
+    if (idx >= 0) Object.assign(ps[idx], { title, content, date });
+    DB.set('policies', ps);
+    App.toast('修改成功');
+    App.goBack();
+  },
+
+  adminDeletePolicy(id) {
+    if (!confirm('确定删除？')) return;
+    DB.set('policies', DB.get('policies').filter(p => p.id !== id));
+    App.toast('删除成功');
+    App.renderPage(App.currentPage);
+  },
+};
+
+// ===== GLOBAL FUNCTIONS =====
+function switchTab(tab) { App.switchTab(tab); }
+function goBack() { App.goBack(); }
+function toggleAdmin() { App.toggleAdmin(); }
+
+// Init
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
