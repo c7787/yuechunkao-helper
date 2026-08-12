@@ -941,7 +941,7 @@ const App = {
           <div class="card-subtitle" style="white-space:pre-line">${plan.tips}</div>
         </div>
         <div style="display:flex;gap:10px;margin-top:12px">
-          <button class="btn btn-outline btn-block" onclick="App.navigateTo('plan-edit','编辑计划',{plan})">修改计划</button>
+          <button class="btn btn-outline btn-block" onclick="App.navigateTo('plan-edit','编辑计划')">修改计划</button>
           <button class="btn btn-primary btn-block" onclick="App.toast('已复制分享链接')">分享方案</button>
         </div>
       `;
@@ -1118,7 +1118,7 @@ const App = {
         </div>
         <div id="errorList">
           ${errorQs.map(q => `
-            <div class="card" style="cursor:pointer" data-subject="${q.subject}" onclick="App.navigateTo('error-redo','错题重做',{q})">
+            <div class="card" style="cursor:pointer" data-subject="${q.subject}" onclick="App.navigateTo('error-redo','错题重做',${q.id})">
               <div class="card-title">${q.stem.substring(0,30)}${q.stem.length>30?'...':''}</div>
               <div class="card-subtitle"><span class="tag tag-blue">${q.subject}</span> <span class="tag tag-orange">${q.category}</span></div>
             </div>`).join('')}
@@ -1127,8 +1127,9 @@ const App = {
     },
 
     // ERROR REDO
-    'error-redo': function (data) {
-      const q = data.q;
+    'error-redo': function (id) {
+      const q = DB.get('questions').find(x => x.id === id);
+      if (!q) return '<div class="empty-state"><div class="empty-state-text">题目不存在</div></div>';
       return `
         <div class="card">
           <span class="tag tag-red" style="margin-bottom:8px;display:inline-block">错题重做</span>
@@ -1235,7 +1236,7 @@ const App = {
         <div id="essayList">
           ${!mats.length ? '<div class="empty-state"><div class="empty-state-icon">📝</div><div class="empty-state-text">暂无素材</div></div>' :
           mats.map(m => `
-            <div class="card" style="cursor:pointer" data-type="${m.type}" onclick="App.navigateTo('essay-detail','素材详情',{m})">
+            <div class="card" style="cursor:pointer" data-type="${m.type}" onclick="App.navigateTo('essay-detail','素材详情',${m.id})">
               <span class="tag ${m.type==='语文时事素材'?'tag-blue':'tag-green'}" style="margin-bottom:6px">${m.type}</span>
               <div class="card-title">${m.title}</div>
               <div class="card-subtitle">${m.date}</div>
@@ -1244,8 +1245,9 @@ const App = {
       `;
     },
 
-    'essay-detail': function (data) {
-      const m = data.m;
+    'essay-detail': function (id) {
+      const m = DB.get('essayMaterials').find(x => x.id === id);
+      if (!m) return '<div class="empty-state"><div class="empty-state-text">素材不存在</div></div>';
       return `
         <div class="card">
           <span class="tag ${m.type==='语文时事素材'?'tag-blue':'tag-green'}" style="margin-bottom:8px">${m.type}</span>
@@ -1310,15 +1312,16 @@ const App = {
       return `
         ${!ps.length ? '<div class="empty-state"><div class="empty-state-icon">📰</div><div class="empty-state-text">暂无政策</div></div>' :
         ps.map(p => `
-          <div class="card" style="cursor:pointer" onclick="App.navigateTo('policy-detail','政策详情',{p})">
+          <div class="card" style="cursor:pointer" onclick="App.navigateTo('policy-detail','政策详情',${p.id})">
             <div class="card-title">${p.title}</div>
             <div class="card-subtitle">${p.date}</div>
           </div>`).join('')}
       `;
     },
 
-    'policy-detail': function (data) {
-      const p = data.p;
+    'policy-detail': function (id) {
+      const p = DB.get('policies').find(x => x.id === id);
+      if (!p) return '<div class="empty-state"><div class="empty-state-text">政策不存在</div></div>';
       return `
         <div class="card">
           <div class="card-title">${p.title}</div>
@@ -1350,7 +1353,7 @@ const App = {
         <div id="communityList">
           ${!posts.length ? '<div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-text">暂无帖子，快来发第一个吧！</div></div>' :
           posts.reverse().map(p => `
-            <div class="post-card" style="cursor:pointer" data-board="${p.board}" onclick="App.navigateTo('community-detail','帖子详情',{p})">
+            <div class="post-card" style="cursor:pointer" data-board="${p.board}" onclick="App.navigateTo('community-detail','帖子详情',${p.id})">
               <div class="post-header">
                 <div class="post-avatar">${p.author[0]}</div>
                 <div><div class="post-author">${p.author}</div><div class="post-time">${p.time} · <span class="tag tag-blue">${p.board}</span></div></div>
@@ -1380,8 +1383,9 @@ const App = {
       `;
     },
 
-    'community-detail': function (data) {
-      const p = data.p;
+    'community-detail': function (id) {
+      const p = DB.get('posts').find(x => x.id === id);
+      if (!p) return '<div class="empty-state"><div class="empty-state-text">帖子不存在</div></div>';
       return `
         <div class="post-card">
           <div class="post-header">
@@ -1484,14 +1488,15 @@ const App = {
     'templates-subject': function (data) {
       const temps = DB.get('templates').filter(t => t.subject === data.subject);
       return temps.map(t => `
-        <div class="card" style="cursor:pointer" onclick="App.navigateTo('template-detail','模板详情',{t})">
+        <div class="card" style="cursor:pointer" onclick="App.navigateTo('template-detail','模板详情',${t.id})">
           <div class="card-title">${t.title}</div>
           <div class="card-subtitle">${t.category}</div>
         </div>`).join('');
     },
 
-    'template-detail': function (data) {
-      const t = data.t;
+    'template-detail': function (id) {
+      const t = DB.get('templates').find(x => x.id === id);
+      if (!t) return '<div class="empty-state"><div class="empty-state-text">模板不存在</div></div>';
       return `
         <div class="card">
           <span class="tag tag-blue" style="margin-bottom:8px">${t.subject} · ${t.category}</span>
@@ -1596,7 +1601,7 @@ const App = {
         `<table class="data-table"><tr><th>名称</th><th>类型</th><th>分类</th><th>时间</th><th>操作</th></tr>
         ${mats.map(m => `<tr>
           <td>${m.name}</td><td>${m.type}</td><td>${m.category}</td><td>${m.uploadTime}</td>
-          <td><button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-material-edit','编辑资料',{m})">编辑</button>
+          <td><button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-material-edit','编辑资料',${m.id})">编辑</button>
           <button class="btn btn-sm btn-danger" onclick="App.adminDeleteMaterial(${m.id})">删除</button></td>
         </tr>`).join('')}</table>`}
       `;
@@ -1617,8 +1622,9 @@ const App = {
       `;
     },
 
-    'admin-material-edit': function (data) {
-      const m = data.m;
+    'admin-material-edit': function (id) {
+      const m = DB.get('materials').find(x => x.id === id);
+      if (!m) return '<div class="empty-state"><div class="empty-state-text">资料不存在</div></div>';
       return `
         <div class="card">
           <div class="form-group"><label class="form-label">资料名称</label><input class="form-input" id="amNameE" value="${m.name}"></div>
@@ -1641,7 +1647,7 @@ const App = {
           <div class="card" data-subject="${q.subject}">
             <div style="display:flex;align-items:center;gap:8px"><span class="tag tag-blue">${q.subject}</span><span class="tag tag-orange">${q.type}</span><span style="font-size:12px;color:var(--text-light)">${q.category}</span>
             <span style="flex:1"></span>
-            <button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-question-edit','编辑题目',{q})">编辑</button>
+            <button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-question-edit','编辑题目',${q.id})">编辑</button>
             <button class="btn btn-sm btn-danger" onclick="App.adminDeleteQuestion(${q.id})">删除</button></div>
             <div style="font-size:14px;margin-top:6px">${q.stem.substring(0,40)}...</div>
           </div>`).join('')}
@@ -1652,8 +1658,10 @@ const App = {
       return App._adminQuestionForm(null);
     },
 
-    'admin-question-edit': function (data) {
-      return App._adminQuestionForm(data.q);
+    'admin-question-edit': function (id) {
+      const q = DB.get('questions').find(x => x.id === id);
+      if (!q) return '<div class="empty-state"><div class="empty-state-text">题目不存在</div></div>';
+      return App._adminQuestionForm(q);
     },
 
     // ADMIN WORDS
@@ -1664,7 +1672,7 @@ const App = {
         <table class="data-table"><tr><th>单词</th><th>词义</th><th>操作</th></tr>
         ${ws.slice(0,30).map(w => `<tr>
           <td style="font-weight:500">${w.word}</td><td>${w.meaning}</td>
-          <td><button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-word-edit','编辑单词',{w})">编辑</button>
+          <td><button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-word-edit','编辑单词',${w.id})">编辑</button>
           <button class="btn btn-sm btn-danger" onclick="App.adminDeleteWord(${w.id})">删除</button></td>
         </tr>`).join('')}</table>
         <div style="text-align:center;padding:12px;color:var(--text-light);font-size:13px">共 ${ws.length} 个单词 | 显示前30个</div>
@@ -1682,8 +1690,9 @@ const App = {
       `;
     },
 
-    'admin-word-edit': function (data) {
-      const w = data.w;
+    'admin-word-edit': function (id) {
+      const w = DB.get('words').find(x => x.id === id);
+      if (!w) return '<div class="empty-state"><div class="empty-state-text">单词不存在</div></div>';
       return `
         <div class="card">
           <div class="form-group"><label class="form-label">单词</label><input class="form-input" id="awWordE" value="${w.word}"></div>
@@ -1702,7 +1711,7 @@ const App = {
           <div class="card">
             <div style="display:flex;align-items:center;gap:8px"><span class="tag tag-blue">${t.subject}</span><span class="tag tag-orange">${t.category}</span>
             <span style="flex:1"></span>
-            <button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-template-edit','编辑模板',{t})">编辑</button>
+            <button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-template-edit','编辑模板',${t.id})">编辑</button>
             <button class="btn btn-sm btn-danger" onclick="App.adminDeleteTemplate(${t.id})">删除</button></div>
             <div style="font-size:14px;font-weight:500;margin-top:4px">${t.title}</div>
           </div>`).join('')}
@@ -1713,8 +1722,10 @@ const App = {
       return App._adminTemplateForm(null);
     },
 
-    'admin-template-edit': function (data) {
-      return App._adminTemplateForm(data.t);
+    'admin-template-edit': function (id) {
+      const t = DB.get('templates').find(x => x.id === id);
+      if (!t) return '<div class="empty-state"><div class="empty-state-text">模板不存在</div></div>';
+      return App._adminTemplateForm(t);
     },
 
     // ADMIN SCORE LINES
@@ -1725,7 +1736,7 @@ const App = {
         <table class="data-table"><tr><th>院校</th><th>专业</th><th>年份</th><th>批次</th><th>分数</th><th>操作</th></tr>
         ${sls.map(sl => `<tr>
           <td>${sl.college}</td><td>${sl.major}</td><td>${sl.year}</td><td>${sl.batch}</td><td style="font-weight:600">${sl.score}</td>
-          <td><button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-score-edit','编辑分数线',{sl})">编辑</button>
+          <td><button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-score-edit','编辑分数线',${sl.id})">编辑</button>
           <button class="btn btn-sm btn-danger" onclick="App.adminDeleteScoreLine(${sl.id})">删除</button></td>
         </tr>`).join('')}</table>
       `;
@@ -1735,8 +1746,10 @@ const App = {
       return App._adminScoreForm(null);
     },
 
-    'admin-score-edit': function (data) {
-      return App._adminScoreForm(data.sl);
+    'admin-score-edit': function (id) {
+      const sl = DB.get('scoreLines').find(x => x.id === id);
+      if (!sl) return '<div class="empty-state"><div class="empty-state-text">分数线数据不存在</div></div>';
+      return App._adminScoreForm(sl);
     },
 
     // ADMIN ESSAY
@@ -1750,7 +1763,7 @@ const App = {
           <div class="card">
             <div style="display:flex;align-items:center;gap:8px"><span class="tag ${m.type==='语文时事素材'?'tag-blue':'tag-green'}">${m.type}</span><span style="font-size:12px;color:var(--text-light)">${m.date}</span>
             <span style="flex:1"></span>
-            <button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-essay-edit','编辑素材',{m})">编辑</button>
+            <button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-essay-edit','编辑素材',${m.id})">编辑</button>
             <button class="btn btn-sm btn-danger" onclick="App.adminDeleteEssay(${m.id})">删除</button></div>
             <div style="font-size:14px;font-weight:500;margin-top:4px">${m.title}</div>
           </div>`).join('')}
@@ -1771,8 +1784,9 @@ const App = {
       `;
     },
 
-    'admin-essay-edit': function (data) {
-      const m = data.m;
+    'admin-essay-edit': function (id) {
+      const m = DB.get('essayMaterials').find(x => x.id === id);
+      if (!m) return '<div class="empty-state"><div class="empty-state-text">素材不存在</div></div>';
       return `
         <div class="card">
           <div class="form-group"><label class="form-label">类型</label>
@@ -1797,7 +1811,7 @@ const App = {
           <div class="card">
             <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--text-light)">${p.date}</span>
             <span style="flex:1"></span>
-            <button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-policy-edit','编辑政策',{p})">编辑</button>
+            <button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-policy-edit','编辑政策',${p.id})">编辑</button>
             <button class="btn btn-sm btn-danger" onclick="App.adminDeletePolicy(${p.id})">删除</button></div>
             <div style="font-size:14px;font-weight:500;margin-top:4px">${p.title}</div>
           </div>`).join('')}
@@ -1815,8 +1829,9 @@ const App = {
       `;
     },
 
-    'admin-policy-edit': function (data) {
-      const p = data.p;
+    'admin-policy-edit': function (id) {
+      const p = DB.get('policies').find(x => x.id === id);
+      if (!p) return '<div class="empty-state"><div class="empty-state-text">政策不存在</div></div>';
       return `
         <div class="card">
           <div class="form-group"><label class="form-label">标题</label><input class="form-input" id="apTitleE" value="${p.title}"></div>
