@@ -250,7 +250,7 @@ body::after{content:"";position:fixed;top:0;left:50%;transform:translateX(-50%);
       返回
     </div>
     <div class="header-title" id="headerTitle">粤春考助手</div>
-    <div class="header-action" id="headerAction" onclick="toggleAdmin()">管理</div>
+    <div class="header-action" id="headerAction" onclick="App.logoutAdmin()" style="display:none">退出</div>
   </div>
 
   <!-- Main Content -->
@@ -285,6 +285,10 @@ body::after{content:"";position:fixed;top:0;left:50%;transform:translateX(-50%);
 <div id="toastContainer"></div>
 
 <script>
+// ===== ADMIN CREDENTIALS =====
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = 'zxc0123';
+
 // ===== DATA STORE =====
 const DB = {
   init() {
@@ -310,7 +314,6 @@ const DB = {
         streak: 0, lastStudyDate: null, wordProgress: { learned: 0, total: 350 }, mockExams: [],
         studyTime: {},
       },
-      admin: { username: 'admin', password: 'admin123' },
     };
     Object.entries(defaults).forEach(([k, v]) => {
       if (!localStorage.getItem('yck_' + k)) localStorage.setItem('yck_' + k, JSON.stringify(v));
@@ -448,11 +451,14 @@ const App = {
   timerSeconds: 0,
   timerRunning: false,
   timerSubject: '',
+  secretTapCount: 0,
+  secretTapTimer: null,
 
   init() {
     this.renderPage('home');
     this.updateNav();
     document.getElementById('headerBack').addEventListener('click', (e) => { e.preventDefault(); this.goBack(); });
+    document.getElementById('headerTitle').addEventListener('click', () => this.secretTap());
   },
 
   // Navigation
@@ -460,8 +466,7 @@ const App = {
     this.pageStack = [];
     this.currentTab = tab;
     this.isAdmin = false;
-    document.getElementById('headerAction').textContent = '管理';
-    document.getElementById('headerAction').style.display = '';
+    document.getElementById('headerAction').style.display = 'none';
     this.updateNav();
     this.renderPage(tab);
     document.querySelector('.main-content').scrollTop = 0;
@@ -526,22 +531,31 @@ const App = {
     setTimeout(() => el.remove(), 2000);
   },
 
-  // Admin toggle
-  toggleAdmin() {
-    if (this.isAdmin) {
-      this.isAdmin = false;
-      this.adminLoggedIn = false;
-      document.getElementById('headerAction').textContent = '管理';
-      this.switchTab('home');
-    } else {
+  // Secret admin entry: tap title 5 times
+  secretTap() {
+    this.secretTapCount++;
+    clearTimeout(this.secretTapTimer);
+    this.secretTapTimer = setTimeout(() => { this.secretTapCount = 0; }, 2000);
+    if (this.secretTapCount >= 5) {
+      this.secretTapCount = 0;
+      clearTimeout(this.secretTapTimer);
       if (this.adminLoggedIn) {
         this.isAdmin = true;
-        document.getElementById('headerAction').textContent = '学生端';
+        document.getElementById('bottomNav').style.display = 'none';
+        document.getElementById('headerAction').style.display = '';
+        this.pageStack = [];
         this.navigateTo('admin-home', '管理后台');
       } else {
         this.navigateTo('admin-login', '管理后台登录');
       }
     }
+  },
+
+  logoutAdmin() {
+    this.isAdmin = false;
+    this.adminLoggedIn = false;
+    this.switchTab('home');
+    this.toast('已退出管理后台');
   },
 
   // ===== PAGE RENDERERS =====
@@ -1237,7 +1251,7 @@ const App = {
               <input class="form-input" id="adminUser" placeholder="请输入用户名" value="admin">
             </div>
             <div class="form-group"><label class="form-label">密码</label>
-              <input class="form-input" id="adminPass" type="password" placeholder="请输入密码" value="admin123">
+              <input class="form-input" id="adminPass" type="password" placeholder="请输入密码">
             </div>
             <button class="btn btn-primary btn-lg" onclick="App.adminLogin()">登录</button>
           </div>
@@ -1820,13 +1834,12 @@ const App = {
 
   // ===== ADMIN ACTIONS =====
   adminLogin() {
-    const user = document.getElementById('adminUser').value;
-    const pass = document.getElementById('adminPass').value;
-    const admin = DB.get('admin');
-    if (user === admin.username && pass === admin.password) {
+    const user = document.getElementById('adminUser').value.trim();
+    const pass = document.getElementById('adminPass').value.trim();
+    if (user === ADMIN_USERNAME && pass === ADMIN_PASSWORD) {
       App.adminLoggedIn = true;
       App.isAdmin = true;
-      document.getElementById('headerAction').textContent = '学生端';
+      document.getElementById('headerAction').textContent = '退出';
       document.getElementById('headerAction').style.display = '';
       document.getElementById('bottomNav').style.display = 'none';
       App.pageStack = [];
@@ -2163,7 +2176,6 @@ const App = {
 // ===== GLOBAL FUNCTIONS =====
 function switchTab(tab) { App.switchTab(tab); }
 function goBack() { App.goBack(); }
-function toggleAdmin() { App.toggleAdmin(); }
 
 // Init
 document.addEventListener('DOMContentLoaded', () => App.init());
