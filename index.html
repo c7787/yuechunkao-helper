@@ -306,6 +306,8 @@ const DB = {
     }
     const defaults = {
       user: { loggedIn: false, nickname: '备考学生' },
+      users: [],
+      currentUser: null,
       studyPlan: null,
       questions: [],
       errorBook: [],
@@ -708,6 +710,11 @@ const App = {
 
   // Navigation
   switchTab(tab) {
+    if ((tab === 'errors' || tab === 'materials') && !this.isLoggedIn()) {
+      this.toast('请先登录');
+      this.navigateTo('auth-login', '登录');
+      return;
+    }
     this.pageStack = [];
     this.currentTab = tab;
     this.isAdmin = false;
@@ -804,6 +811,54 @@ const App = {
     this.toast('已退出管理后台');
   },
 
+  // ===== AUTH =====
+  isLoggedIn() { return !!DB.get('currentUser'); },
+  currentNickname() { return (DB.get('currentUser') || {}).nickname || '备考学生'; },
+
+  requireLogin() {
+    if (this.isLoggedIn()) return true;
+    this.toast('请先登录');
+    this.navigateTo('auth-login', '登录');
+    return false;
+  },
+
+  login() {
+    const username = document.getElementById('lg-username').value.trim();
+    const password = document.getElementById('lg-password').value.trim();
+    if (!username || !password) { this.toast('请输入账号和密码'); return; }
+    const users = DB.get('users') || [];
+    const u = users.find(x => x.username === username && x.password === password);
+    if (!u) { this.toast('账号或密码错误'); return; }
+    DB.set('currentUser', u);
+    this.toast('登录成功，欢迎 ' + u.nickname);
+    this.switchTab('home');
+  },
+
+  register() {
+    const username = document.getElementById('rg-username').value.trim();
+    const nickname = document.getElementById('rg-nickname').value.trim();
+    const password = document.getElementById('rg-password').value.trim();
+    const password2 = document.getElementById('rg-password2').value.trim();
+    if (!username || !password || !nickname) { this.toast('请填写完整信息'); return; }
+    if (username.length < 3) { this.toast('账号至少3个字符'); return; }
+    if (password.length < 6) { this.toast('密码至少6位'); return; }
+    if (password !== password2) { this.toast('两次密码不一致'); return; }
+    const users = DB.get('users') || [];
+    if (users.some(x => x.username === username)) { this.toast('该账号已注册，请直接登录'); return; }
+    const u = { id: Date.now(), username, password, nickname, createdAt: new Date().toISOString() };
+    users.push(u);
+    DB.set('users', users);
+    DB.set('currentUser', u);
+    this.toast('注册成功，欢迎 ' + nickname);
+    this.switchTab('home');
+  },
+
+  logout() {
+    DB.set('currentUser', null);
+    this.toast('已退出登录');
+    this.switchTab('home');
+  },
+
   // ===== COUNTDOWN =====
   getCountdown() {
     const diff = EXAM_TIME - new Date();
@@ -843,6 +898,23 @@ const App = {
           <p id="countdownDisplay" style="font-size:26px;font-weight:700;color:var(--primary-dark);margin:8px 0">计算中...</p>
           <p style="font-size:13px;color:var(--text-secondary)">预计考试时间：2027年1月8日 09:00</p>
         </div>
+        ${this.isLoggedIn() ? `
+        <div class="card" style="display:flex;align-items:center;gap:12px">
+          <div class="post-avatar" style="width:42px;height:42px;font-size:18px">${this.currentNickname()[0]}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;font-weight:600">👋 ${this.currentNickname()}</div>
+            <div style="font-size:12px;color:var(--text-secondary)">已登录，加油备考！</div>
+          </div>
+          <button class="btn btn-sm btn-outline" onclick="App.logout()">退出</button>
+        </div>` : `
+        <div class="card" style="cursor:pointer;display:flex;align-items:center;gap:12px" onclick="App.navigateTo('auth-login','登录')">
+          <div class="post-avatar" style="width:42px;height:42px;font-size:18px">👤</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;font-weight:600">登录 / 注册</div>
+            <div style="font-size:12px;color:var(--text-secondary)">解锁学习计划、错题本、社区等完整功能</div>
+          </div>
+          <span style="color:var(--text-light)">›</span>
+        </div>`}
         ${plan ? `
         <div class="card" style="cursor:pointer" onclick="App.navigateTo('plan-view','学习计划')">
           <div class="card-title">📋 我的备考计划</div>
@@ -879,6 +951,58 @@ const App = {
           <div class="card" style="cursor:pointer;text-align:center" onclick="App.navigateTo('policy-list','政策解读')">
             <div style="font-size:28px;margin-bottom:6px">📰</div>
             <div style="font-size:14px;font-weight:500">政策解读专栏</div>
+          </div>
+        </div>
+      `;
+    },
+
+    // AUTH LOGIN
+    'auth-login': function () {
+      return `
+        <div class="login-container">
+          <div class="login-logo">👤</div>
+          <div class="login-title">登录</div>
+          <div class="login-subtitle">登录后解锁完整备考功能</div>
+          <div class="card" style="width:100%">
+            <div class="form-group"><label class="form-label">账号</label>
+              <input class="form-input" id="lg-username" placeholder="请输入账号">
+            </div>
+            <div class="form-group"><label class="form-label">密码</label>
+              <input class="form-input" id="lg-password" type="password" placeholder="请输入密码">
+            </div>
+            <button class="btn btn-primary btn-lg" onclick="App.login()">登录</button>
+          </div>
+          <div style="margin-top:16px;font-size:14px;color:var(--text-secondary)">
+            还没有账号？<a href="javascript:void(0)" onclick="App.navigateTo('auth-register','注册')" style="color:var(--primary);text-decoration:none">立即注册</a>
+          </div>
+        </div>
+      `;
+    },
+
+    // AUTH REGISTER
+    'auth-register': function () {
+      return `
+        <div class="login-container">
+          <div class="login-logo">📝</div>
+          <div class="login-title">注册</div>
+          <div class="login-subtitle">创建你的备考账号</div>
+          <div class="card" style="width:100%">
+            <div class="form-group"><label class="form-label">账号</label>
+              <input class="form-input" id="rg-username" placeholder="请输入账号（至少3个字符）">
+            </div>
+            <div class="form-group"><label class="form-label">昵称</label>
+              <input class="form-input" id="rg-nickname" placeholder="给自己起个昵称">
+            </div>
+            <div class="form-group"><label class="form-label">密码</label>
+              <input class="form-input" id="rg-password" type="password" placeholder="至少6位">
+            </div>
+            <div class="form-group"><label class="form-label">确认密码</label>
+              <input class="form-input" id="rg-password2" type="password" placeholder="再次输入密码">
+            </div>
+            <button class="btn btn-primary btn-lg" onclick="App.register()">注册</button>
+          </div>
+          <div style="margin-top:16px;font-size:14px;color:var(--text-secondary)">
+            已有账号？<a href="javascript:void(0)" onclick="App.navigateTo('auth-login','登录')" style="color:var(--primary);text-decoration:none">去登录</a>
           </div>
         </div>
       `;
@@ -1339,7 +1463,7 @@ const App = {
       return `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div style="font-size:16px;font-weight:600">💬 学习社区</div>
-          <button class="btn btn-sm btn-primary" onclick="App.navigateTo('community-post','发帖')">+ 发帖</button>
+          <button class="btn btn-sm btn-primary" onclick="App.requireLogin() && App.navigateTo('community-post','发帖')">+ 发帖</button>
         </div>
         <div class="tabs" id="communityTabs">
           <div class="tab active" onclick="App.filterCommunity('all',this)">全部</div>
@@ -2077,6 +2201,7 @@ const App = {
   },
 
   submitPost() {
+    if (!App.requireLogin()) return;
     const board = document.getElementById('postBoard').value;
     const title = document.getElementById('postTitle').value.trim();
     const content = document.getElementById('postContent').value.trim();
@@ -2084,7 +2209,7 @@ const App = {
     const posts = DB.get('posts');
     posts.push({
       id: Date.now(), board, title, content,
-      author: DB.get('user').nickname,
+      author: App.currentNickname(),
       time: new Date().toLocaleString('zh-CN'),
       replies: [],
     });
@@ -2095,6 +2220,7 @@ const App = {
 
   // ===== PLAN =====
   generatePlan() {
+    if (!App.requireLogin()) return;
     const chinese = parseInt(document.getElementById('pf-chinese').value) || 0;
     const math = parseInt(document.getElementById('pf-math').value) || 0;
     const english = parseInt(document.getElementById('pf-english').value) || 0;
