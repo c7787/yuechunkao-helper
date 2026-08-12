@@ -218,6 +218,7 @@ body::after{content:"";position:fixed;top:0;left:50%;transform:translateX(-50%);
 
 /* Highlight card */
 .highlight-card{background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:var(--radius);padding:20px;margin-bottom:12px}
+.cd-num{display:inline-block;min-width:34px;font-variant-numeric:tabular-nums;text-align:center}
 .highlight-card h3{font-size:18px;font-weight:700;color:var(--primary-dark);margin-bottom:6px}
 .highlight-card p{font-size:14px;color:var(--text)}
 
@@ -288,6 +289,10 @@ body::after{content:"";position:fixed;top:0;left:50%;transform:translateX(-50%);
 // ===== ADMIN CREDENTIALS =====
 const ADMIN_USERNAME = 'admin';
 const ADMIN_PASSWORD = 'zxc0123';
+
+// ===== EXAM TIME =====
+// 2027年1月广东学考（语数英）预计考试时间
+const EXAM_TIME = new Date('2027-01-08T09:00:00+08:00');
 
 // ===== DATA STORE =====
 const DATA_VERSION = 2;
@@ -691,6 +696,7 @@ const App = {
   timerSubject: '',
   secretTapCount: 0,
   secretTapTimer: null,
+  countdownTimer: null,
 
   init() {
     this.renderPage('home');
@@ -749,6 +755,7 @@ const App = {
     const renderer = this._pages[page];
     container.innerHTML = renderer ? renderer.call(this, data) : '<div class="empty-state"><div class="empty-state-icon">📄</div><div class="empty-state-text">页面开发中...</div></div>';
     container.scrollTop = 0;
+    if (page === 'home') { this.startCountdown(); } else { this.stopCountdown(); }
     if (page === 'home' || page === 'quiz' || page === 'errors' || page === 'materials' || page === 'community') {
       this.currentTab = page;
       this.pageStack = [];
@@ -796,6 +803,34 @@ const App = {
     this.toast('已退出管理后台');
   },
 
+  // ===== COUNTDOWN =====
+  getCountdown() {
+    const diff = EXAM_TIME - new Date();
+    if (diff <= 0) return { d: 0, h: 0, m: 0, s: 0 };
+    return {
+      d: Math.floor(diff / 86400000),
+      h: Math.floor((diff % 86400000) / 3600000),
+      m: Math.floor((diff % 3600000) / 60000),
+      s: Math.floor((diff % 60000) / 1000),
+    };
+  },
+
+  startCountdown() {
+    this.stopCountdown();
+    const update = () => {
+      const el = document.getElementById('countdownDisplay');
+      if (!el) { this.stopCountdown(); return; }
+      const t = this.getCountdown();
+      el.innerHTML = `<span class="cd-num">${t.d}</span>天 <span class="cd-num">${String(t.h).padStart(2, '0')}</span>时 <span class="cd-num">${String(t.m).padStart(2, '0')}</span>分 <span class="cd-num">${String(t.s).padStart(2, '0')}</span>秒`;
+    };
+    update();
+    this.countdownTimer = setInterval(update, 1000);
+  },
+
+  stopCountdown() {
+    if (this.countdownTimer) { clearInterval(this.countdownTimer); this.countdownTimer = null; }
+  },
+
   // ===== PAGE RENDERERS =====
   _pages: {
     // HOME
@@ -804,8 +839,8 @@ const App = {
       return `
         <div class="highlight-card">
           <h3>2027广东春考倒计时</h3>
-          <p style="font-size:24px;font-weight:700;color:var(--primary-dark);margin:8px 0">约 140 天</p>
-          <p style="font-size:13px;color:var(--text-secondary)">预计考试时间：2027年1月</p>
+          <p id="countdownDisplay" style="font-size:26px;font-weight:700;color:var(--primary-dark);margin:8px 0">计算中...</p>
+          <p style="font-size:13px;color:var(--text-secondary)">预计考试时间：2027年1月8日 09:00</p>
         </div>
         ${plan ? `
         <div class="card" style="cursor:pointer" onclick="App.navigateTo('plan-view','学习计划')">
@@ -891,8 +926,7 @@ const App = {
       const plan = DB.get('studyPlan');
       if (!plan) return '<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">还没有备考计划</div><button class="btn btn-primary" style="margin-top:16px" onclick="App.navigateTo(\'plan-form\',\'生成学习计划\')">去生成</button></div>';
       const now = new Date();
-      const examDate = new Date('2027-01-10');
-      const daysLeft = Math.ceil((examDate - now) / (1000 * 60 * 60 * 24));
+      const daysLeft = Math.ceil((EXAM_TIME - now) / (1000 * 60 * 60 * 24));
       return `
         <div class="highlight-card" style="text-align:center">
           <div style="font-size:40px;font-weight:700;color:var(--primary-dark)">${plan.targetScore}</div>
