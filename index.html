@@ -697,6 +697,7 @@ const App = {
   secretTapCount: 0,
   secretTapTimer: null,
   countdownTimer: null,
+  wordGame: null,
 
   init() {
     this.renderPage('home');
@@ -1443,20 +1444,61 @@ const App = {
     'words-tool': function () {
       return `
         <div class="card"><div class="card-title">📚 学考350高频词</div><div class="card-subtitle">三种模式助你高效背单词</div></div>
-        ${this._listItem('🎮', '单词闯关模式', '看单词选词义，趣味闯关', () => App.navigateTo('words-challenge','单词闯关'))}
+        ${this._listItem('🎮', '单词闯关模式', '看单词选词义，趣味闯关', () => App.startWordGame('challenge'))}
         ${this._listItem('🎧', '听音默写模式', '听发音写单词，练听力拼写', () => App.toast('录音播放功能为模拟，进入闯关模式体验'))}
-        ${this._listItem('📝', '词义单选模式', '看词义选单词，巩固记忆', () => App.navigateTo('words-meaning','词义单选'))}
+        ${this._listItem('📝', '词义单选模式', '看词义选单词，巩固记忆', () => App.startWordGame('meaning'))}
         ${this._listItem('📋', '复习清单', '艾宾浩斯遗忘曲线智能推送', () => App.navigateTo('words-review','复习清单'))}
         ${this._listItem('📤', '导出单词PDF', '下载打印背诵', () => App.toast('PDF导出功能模拟，已生成下载链接'))}
       `;
     },
 
-    'words-challenge': function () {
-      return App._wordsGame('challenge');
+    'words-game': function () {
+      const g = App.wordGame;
+      if (!g || !g.words.length) return '<div class="empty-state"><div class="empty-state-icon">📚</div><div class="empty-state-text">闯关未开始</div></div>';
+      const current = g.words[g.index];
+      const question = g.mode === 'challenge' ? current.word : current.meaning;
+      const correctText = g.mode === 'challenge' ? current.meaning : current.word;
+      const distractors = g.words.filter(w => w.id !== current.id).slice(0, 3)
+        .map(w => g.mode === 'challenge' ? w.meaning : w.word);
+      const options = [correctText, ...distractors].sort(() => Math.random() - 0.5);
+      const correctIndex = options.indexOf(correctText);
+      return `
+        <div class="card" style="text-align:center">
+          <div class="card-subtitle">${g.mode === 'challenge' ? '看单词选词义' : '看词义选单词'}</div>
+          <div style="font-size:28px;font-weight:700;margin:20px 0;color:var(--primary)">${question}</div>
+          <div style="font-size:13px;color:var(--text-light);margin-bottom:16px">${g.index + 1} / ${g.words.length}</div>
+          ${options.map((o, i) => `
+            <div class="quiz-option" onclick="App.checkWordAnswer(this,${i},${correctIndex})">
+              <div class="quiz-option-marker">${'ABCD'[i]}</div>
+              <span>${o}</span>
+            </div>`).join('')}
+          <div id="wordResult" style="display:none;margin-top:14px">
+            <div id="wordResultText" style="font-size:15px;font-weight:600;margin-bottom:10px"></div>
+            <button class="btn btn-primary btn-block" onclick="App.nextWord()">${g.index + 1 >= g.words.length ? '查看结果' : '下一题'}</button>
+          </div>
+        </div>
+      `;
     },
 
-    'words-meaning': function () {
-      return App._wordsGame('meaning');
+    'words-result': function () {
+      const g = App.wordGame;
+      if (!g) return '<div class="empty-state"><div class="empty-state-text">暂无结果</div></div>';
+      const total = g.words.length;
+      const correct = g.correct || 0;
+      const rate = total ? Math.round(correct / total * 100) : 0;
+      const color = rate >= 80 ? 'var(--success)' : rate >= 60 ? 'var(--warning)' : 'var(--danger)';
+      return `
+        <div class="highlight-card" style="text-align:center">
+          <div style="font-size:40px;font-weight:700;color:${color}">${correct} / ${total}</div>
+          <div style="font-size:14px;color:var(--text-secondary)">答对单词数</div>
+          <div style="margin-top:8px;font-size:20px;font-weight:700;color:${color}">正确率 ${rate}%</div>
+        </div>
+        <div class="card">
+          <div class="card-subtitle" style="text-align:center">${rate >= 80 ? '🎉 太棒了，掌握得很扎实！' : rate >= 60 ? '💪 不错，继续巩固错题词！' : '📚 别灰心，多复习几遍就好了！'}</div>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="App.startWordGame('${g.mode}')">🔁 再来一轮</button>
+        <button class="btn btn-outline btn-lg" style="margin-top:8px" onclick="App.navigateTo('words-tool','350高频词')">返回工具</button>
+      `;
     },
 
     'words-review': function () {
@@ -2196,42 +2238,48 @@ const App = {
   },
 
   // ===== WORDS GAME =====
-  _wordsGame(mode) {
+  startWordGame(mode) {
     const words = DB.get('words').slice(0, 20).sort(() => Math.random() - 0.5);
-    const currentWord = words[0];
-    if (!currentWord) return '<div class="empty-state"><div class="empty-state-icon">📚</div><div class="empty-state-text">单词库加载中...</div></div>';
-    const allWords = words.slice(0, 4);
-    const question = mode === 'challenge' ? currentWord.word : currentWord.meaning;
-    const options = allWords.map(w => mode === 'challenge' ? w.meaning : w.word).sort(() => Math.random() - 0.5);
-    return `
-      <div class="card" style="text-align:center">
-        <div class="card-subtitle">${mode === 'challenge' ? '看单词选词义' : '看词义选单词'}</div>
-        <div style="font-size:28px;font-weight:700;margin:20px 0;color:var(--primary)">${question}</div>
-        <div style="font-size:13px;color:var(--text-light);margin-bottom:16px">1 / ${words.length}</div>
-        ${options.map((o, i) => `
-          <div class="quiz-option" onclick="App.checkWordAnswer(this,'${o}','${mode==='challenge'?currentWord.meaning:currentWord.word}',${words.length})">
-            <div class="quiz-option-marker">${'ABCD'[i]}</div>
-            <span>${o}</span>
-          </div>`).join('')}
-      </div>
-    `;
+    if (!words.length) { App.toast('单词库为空'); return; }
+    this.wordGame = { mode, words, index: 0, correct: 0 };
+    this.navigateTo('words-game', mode === 'challenge' ? '单词闯关' : '词义单选');
   },
 
-  checkWordAnswer(el, userAns, correctAns, total) {
+  checkWordAnswer(el, userIndex, correctIndex) {
+    const g = App.wordGame;
+    if (!g) return;
+    const isCorrect = userIndex === correctIndex;
+    // 禁用所有选项，防止重复点击
     document.querySelectorAll('#mainContent .quiz-option').forEach(o => o.style.pointerEvents = 'none');
-    const isCorrect = userAns === correctAns;
-    el.classList.add(isCorrect ? 'correct' : 'wrong');
-    // Highlight correct one
-    document.querySelectorAll('#mainContent .quiz-option').forEach(o => {
-      if (o.textContent.trim().includes(correctAns)) o.classList.add('correct');
+    // 高亮正确答案；答错时高亮用户所选
+    document.querySelectorAll('#mainContent .quiz-option').forEach((o, i) => {
+      if (i === correctIndex) o.classList.add('correct');
+      else if (i === userIndex && !isCorrect) o.classList.add('wrong');
     });
+    if (isCorrect) g.correct++;
+    // 记录学习进度
     const stats = DB.get('studyStats');
     stats.wordProgress.learned = Math.min(stats.wordProgress.learned + 1, stats.wordProgress.total);
     DB.set('studyStats', stats);
-    setTimeout(() => {
-      App.toast(isCorrect ? '✅ 正确！' : '❌ 错误');
-      App.renderPage('words-tool');
-    }, 1000);
+    // 显示反馈 + 下一题按钮
+    const resultEl = document.getElementById('wordResult');
+    const textEl = document.getElementById('wordResultText');
+    if (resultEl) resultEl.style.display = '';
+    if (textEl) {
+      textEl.textContent = isCorrect ? '✅ 回答正确！' : '❌ 回答错误';
+      textEl.style.color = isCorrect ? 'var(--success)' : 'var(--danger)';
+    }
+  },
+
+  nextWord() {
+    const g = App.wordGame;
+    if (!g) return;
+    g.index++;
+    if (g.index >= g.words.length) {
+      App.navigateTo('words-result', '闯关结果');
+    } else {
+      App.renderPage('words-game');
+    }
   },
 
   // ===== ADMIN ACTIONS =====
