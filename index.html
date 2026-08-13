@@ -214,6 +214,7 @@ body::after{content:"";position:fixed;top:0;left:50%;transform:translateX(-50%);
 .answer-dot{width:100%;aspect-ratio:1;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);transition:var(--transition)}
 .answer-dot.done{background:var(--primary);color:#fff;border-color:var(--primary)}
 .answer-dot.current{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+.answer-dot.marked{border-color:#f59e0b;background:#fffbeb;color:#b45309}
 .answer-dot.correct-dot{background:var(--success);color:#fff;border-color:var(--success)}
 .answer-dot.wrong-dot{background:var(--danger);color:#fff;border-color:var(--danger)}
 
@@ -301,7 +302,7 @@ const ADMIN_PASSWORD = 'zxc0123';
 const EXAM_TIME = new Date('2027-01-08T09:00:00+08:00');
 
 // ===== DATA STORE =====
-const DATA_VERSION = 4;
+const DATA_VERSION = 5;
 const DB = {
   init() {
     // 数据版本升级时，清除旧的种子数据，重新初始化
@@ -325,6 +326,7 @@ const DB = {
       essayMaterials: [],
       policies: [],
       posts: [],
+      exam_records: [],
       announcements: [
         { title: '2027年广东春考时间节点提醒', content: '语文、数学、英语学考预计于2027年1月初举行，请同学们合理安排复习时间。', time: '2026-08-01' },
         { title: '征集志愿补录通知', content: '2026年春考补录批次已于7月完成，请关注后续2027年补录时间节点。', time: '2026-07-15' },
@@ -492,6 +494,8 @@ const DB = {
       { id: 131, subject: '英语', type: '单选', category: '语法', stem: 'He is ___ honest boy.', options: ['A. a', 'B. an', 'C. the', 'D. /'], answer: 1, analysis: 'honest 的 h 不发音，以元音音素开头，用冠词 an。' },
       { id: 132, subject: '英语', type: '单选', category: '交际', stem: '— I\'m sorry I\'m late. — ___.', options: ['A. It doesn\'t matter', 'B. Yes, please', 'C. You\'re welcome', 'D. Good luck'], answer: 0, analysis: '回应道歉用 "It doesn\'t matter"（没关系）。' },
     ];
+    // 按 id 分组赋予年份：核心题(id≤42)为 2025，扩充题(id>42)为 2026
+    qs.forEach(q => { q.year = q.id <= 42 ? '2025' : '2026'; });
     this.set('questions', qs);
   },
 
@@ -782,7 +786,7 @@ const DB = {
 // ===== 云端同步层（Supabase）=====
 // 本地 key → 云端表名 + 字段映射（toRow: 本地→云端，fromRow: 云端→本地）
 const CLOUD_TABLES = {
-  questions:      { table: 'questions',       toRow: (it) => ({ id: it.id, subject: it.subject, type: it.type, category: it.category, stem: it.stem, options: it.options || [], answer: it.answer, analysis: it.analysis }), fromRow: (r) => ({ id: r.id, subject: r.subject, type: r.type, category: r.category, stem: r.stem, options: r.options || [], answer: r.answer, analysis: r.analysis }) },
+  questions:      { table: 'questions',       toRow: (it) => ({ id: it.id, subject: it.subject, type: it.type, category: it.category, stem: it.stem, options: it.options || [], answer: it.answer, analysis: it.analysis, year: it.year || '' }), fromRow: (r) => ({ id: r.id, subject: r.subject, type: r.type, category: r.category, stem: r.stem, options: r.options || [], answer: r.answer, analysis: r.analysis, year: r.year || '' }) },
   words:          { table: 'words',           toRow: (it) => ({ id: it.id, word: it.word, meaning: it.meaning, phonetic: it.phonetic || '' }), fromRow: (r) => ({ id: r.id, word: r.word, meaning: r.meaning, phonetic: r.phonetic || '' }) },
   templates:      { table: 'templates',       toRow: (it) => ({ id: it.id, subject: it.subject, category: it.category, title: it.title, content: it.content }), fromRow: (r) => ({ id: r.id, subject: r.subject, category: r.category, title: r.title, content: r.content }) },
   scoreLines:     { table: 'score_lines',     toRow: (it) => ({ id: it.id, year: it.year, batch: it.batch, college: it.college, major: it.major, score: it.score, property: it.property, region: it.region }), fromRow: (r) => ({ id: r.id, year: r.year, batch: r.batch, college: r.college, major: r.major, score: r.score, property: r.property, region: r.region }) },
@@ -838,7 +842,7 @@ const CloudSync = {
 };
 
 // ===== 个人数据云端同步（user_data 通用 JSON 表）=====
-const PERSONAL_KEYS = ['studyPlan', 'errorBook', 'favorites', 'studyStats'];
+const PERSONAL_KEYS = ['studyPlan', 'errorBook', 'favorites', 'studyStats', 'exam_records'];
 
 const PersonalSync = {
   _queue: Promise.resolve(),
@@ -900,6 +904,16 @@ const App = {
   countdownTimer: null,
   wordGame: null,
   _currentUser: null,
+  paper: null,            // 当前套卷 { subject, year, questions, total }
+  paperAnswers: {},       // { qid: answerIndex }
+  paperMarked: {},        // { qid: true } 标记不确定
+  paperIndex: 0,
+  paperSeconds: 0,        // 剩余秒数
+  paperTotalSeconds: 0,
+  paperTimer: null,
+  paperStartAt: 0,        // 开始时间戳（计算用时）
+  paperResult: null,      // 交卷结果
+  paperSetup: { subject: null, year: '全部', count: 20 },
 
   async init() {
     // 初始化 Supabase 会话（异步），缓存登录状态
@@ -924,6 +938,7 @@ const App = {
 
   // Navigation
   switchTab(tab) {
+    this._paperLeaveGuard();
     if ((tab === 'errors' || tab === 'materials') && !this.isLoggedIn()) {
       this.toast('请先登录');
       this.navigateTo('auth-login', '登录');
@@ -954,6 +969,7 @@ const App = {
   },
 
   goBack() {
+    this._paperLeaveGuard();
     if (this.pageStack.length === 0) return;
     const prev = this.pageStack.pop();
     this._currentPageData = prev.data;
@@ -1366,10 +1382,15 @@ const App = {
               <div style="font-size:14px;font-weight:500">${s}</div>
             </div>`).join('')}
         </div>
+        <div class="card" style="cursor:pointer;background:linear-gradient(135deg,var(--primary),#2563eb);color:#fff;border:none" onclick="App.navigateTo('exam-paper-setup','套卷模考')">
+          <div style="font-size:18px;font-weight:700">📝 套卷模考</div>
+          <div style="font-size:13px;opacity:.9;margin-top:4px">按科目·年份组卷，全真倒计时，交卷自动批改并记录分数曲线</div>
+        </div>
         <div class="section-title">🎯 特色工具</div>
         ${this._listItem('📚', '学考350高频词', '单词闯关·听音默写·词义单选', () => App.navigateTo('words-tool','350高频词'))}
         ${this._listItem('📋', '答题模板素材库', '语文·数学·英语模板', () => App.navigateTo('templates','答题模板'))}
         ${this._listItem('📝', '真题模考全真模拟', '严格复刻正式学考', () => App.navigateTo('mock-exam-list','真题模考'))}
+        ${this._listItem('📈', '模考历史与曲线', '历次成绩趋势一目了然', () => App.navigateTo('exam-history','模考历史'))}
         ${this._listItem('❌', '错题专项组卷', '一键生成专属错题试卷', () => App.navigateTo('error-paper','错题组卷'))}
         ${this._listItem('🔍', '真题分数线查询', '近3年录取数据一键查', () => App.navigateTo('score-query','分数线查询'))}
       `;
@@ -1402,6 +1423,159 @@ const App = {
             <div class="card-title">${s}全真模拟</div>
             <div class="card-subtitle">⏱️ 120分钟 | 📝 ${DB.get('questions').filter(q=>q.subject===s).length} 题 | 满分150分</div>
           </div>`).join('')}
+      `;
+    },
+
+    // ===== 套卷模考 =====
+    'exam-paper-setup': function () {
+      const qs = DB.get('questions');
+      const years = [...new Set(qs.map(q => q.year).filter(Boolean))].sort().reverse();
+      const draft = this._getPaperDraft();
+      return `
+        ${draft ? `<div class="card" style="border-left:4px solid var(--primary);cursor:pointer" onclick="App.resumePaper()">
+          <div class="card-title">📌 上次模考未完成</div>
+          <div class="card-subtitle">${draft.subject} · ${draft.year==='历年'?'历年':draft.year+'年'} · 已答 ${Object.keys(draft.answers).length}/${draft.questions.length} 题 · 剩 ${this._fmtSec(draft.seconds)}</div>
+          <div style="margin-top:8px"><span class="tag tag-blue">点击继续作答 →</span></div>
+        </div>` : ''}
+        <div class="card"><div class="card-title">📝 套卷模考</div><div class="card-subtitle">按科目、年份组卷，全真模拟考试</div></div>
+        <div class="card">
+          <div class="form-group"><label class="form-label">科目</label>
+            <div class="filter-row" id="paperSubjectRow">
+              ${['语文','数学','英语'].map(s => `<div class="filter-chip ${App.paperSetup.subject===s?'active':''}" onclick="App.paperPickSubject('${s}',this)">${s}</div>`).join('')}
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">年份</label>
+            <div class="filter-row" id="paperYearRow">
+              <div class="filter-chip ${App.paperSetup.year==='全部'?'active':''}" onclick="App.paperPickYear('全部',this)">全部</div>
+              ${years.map(y => `<div class="filter-chip ${App.paperSetup.year===y?'active':''}" onclick="App.paperPickYear('${y}',this)">${y}年</div>`).join('')}
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">题量</label>
+            <div class="filter-row" id="paperCountRow">
+              ${[10,20,30,0].map((n,i) => `<div class="filter-chip ${App.paperSetup.count===n?'active':''}" onclick="App.paperPickCount(${n},this)">${n===0?'全部':n+'题'}</div>`).join('')}
+            </div>
+          </div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;line-height:1.7" id="paperPreview"></div>
+          <button class="btn btn-primary btn-lg btn-block" onclick="App.startPaper()">开始考试</button>
+        </div>
+        <div class="card" style="cursor:pointer" onclick="App.navigateTo('exam-history','模考历史')">
+          <div class="card-title">📈 模考历史</div><div class="card-subtitle">查看历次模考成绩与分数曲线</div>
+        </div>
+      `;
+    },
+
+    'exam-paper-taking': function () {
+      const q = App.paper.questions[App.paperIndex];
+      const total = App.paper.total;
+      const ua = App.paperAnswers[q.id];
+      const marked = App.paperMarked[q.id];
+      const answered = Object.keys(App.paperAnswers).length;
+      const danger = App.paperSeconds < 300;
+      return `
+        <div style="position:sticky;top:0;z-index:10;background:var(--bg);padding:4px 0 10px">
+          <div style="display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px">
+            <div style="flex:1">
+              <div style="font-size:22px;font-weight:700;color:${danger?'var(--danger)':'var(--primary)'};font-variant-numeric:tabular-nums" id="paperClock">${this._fmtSec(App.paperSeconds)}</div>
+              <div style="font-size:11px;color:var(--text-secondary)">${answered}/${total} 已答 · ${App.paper.subject}${App.paper.year!=='历年'?'·'+App.paper.year+'年':''}</div>
+            </div>
+            <button class="btn btn-sm ${marked?'btn-primary':'btn-outline'}" onclick="App.paperToggleMark()">${marked?'⚑ 已标记':'⚑ 标记'}</button>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0 8px">
+          <span class="tag tag-blue">${q.subject}·${q.category}</span>
+          <span style="font-size:13px;color:var(--text-secondary)">第 ${App.paperIndex+1}/${total} 题</span>
+        </div>
+        <div class="card">
+          <div style="font-size:15px;font-weight:500;line-height:1.8;margin-bottom:16px">${q.stem}</div>
+          ${q.options.map((opt,i)=>`
+            <div class="quiz-option ${ua===i?'selected':''}" onclick="App.paperSelectAnswer(${i})">
+              <div class="quiz-option-marker">${'ABCD'[i]}</div><span>${opt.substring(3)}</span>
+            </div>`).join('')}
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          ${App.paperIndex>0?'<button class="btn btn-outline btn-block" onclick="App.paperPrev()">上一题</button>':''}
+          ${App.paperIndex<total-1?'<button class="btn btn-primary btn-block" onclick="App.paperNext()">下一题</button>':'<button class="btn btn-primary btn-block" onclick="App.paperSubmit()">交卷</button>'}
+        </div>
+        <div class="answer-grid" style="margin-top:16px">
+          ${App.paper.questions.map((item,i)=>`
+            <div class="answer-dot ${App.paperAnswers[item.id]!==undefined?'done':''} ${App.paperMarked[item.id]?'marked':''} ${i===App.paperIndex?'current':''}" onclick="App.paperJump(${i})">${i+1}</div>`).join('')}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-outline btn-block" onclick="App.paperSaveExit()">💾 保存退出</button>
+          <button class="btn btn-danger btn-block" onclick="App.paperSubmit()">交卷</button>
+        </div>
+      `;
+    },
+
+    'exam-paper-result': function () {
+      const r = App.paperResult;
+      if (!r) return '<div class="empty-state"><div class="empty-state-text">暂无结果</div></div>';
+      const cats = Object.keys(r.categoryStats || {});
+      return `
+        <div class="highlight-card" style="text-align:center">
+          <div style="font-size:48px;font-weight:700;color:${r.score>=60?'var(--success)':'var(--danger)'}">${r.score}</div>
+          <div style="font-size:14px;color:var(--text-secondary)">得分（百分制）</div>
+          <div style="margin-top:8px;font-size:14px">✅ ${r.correct} 题 &nbsp; ❌ ${r.wrong} 题 &nbsp; ⚪ ${r.unanswered} 题未答</div>
+          <div style="margin-top:4px;font-size:14px">📊 正确率 ${r.accuracy}%</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:6px">${r.subject} · ${r.year==='历年'?'历年':r.year+'年'} · ${r.date} ${r.time} · 用时 ${this._fmtSec(r.duration)}</div>
+        </div>
+        <div class="card"><div class="card-title">🎯 各知识点得分率</div>
+          ${cats.map(c => {
+            const s = r.categoryStats[c];
+            const rate = s.total ? Math.round(s.correct/s.total*100) : 0;
+            return `<div style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;font-size:13px"><span>${c}</span><span style="color:var(--text-secondary)">${s.correct}/${s.total} · ${rate}%</span></div>
+              <div class="progress-bar" style="margin-top:4px"><div class="progress-fill" style="width:${rate}%;background:${rate>=80?'var(--success)':rate>=60?'#f59e0b':'var(--danger)'}"></div></div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="card"><div class="card-title">📋 答题回顾</div>
+          ${r.questions.map((q,i)=>{
+            const ua = r.answers[q.id];
+            const correct = ua === q.answer;
+            return `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <span class="tag ${correct?'tag-green':(ua===undefined?'tag-orange':'tag-red')}">${correct?'正确':(ua===undefined?'未答':'错误')}</span>
+                <span style="font-size:12px;color:var(--text-light)">${q.subject}·${q.category}</span>
+              </div>
+              <div style="font-size:14px;font-weight:500;margin-bottom:4px">${i+1}. ${q.stem}</div>
+              <div style="font-size:12px;color:var(--success)">✅ 正确答案：${'ABCD'[q.answer]}. ${q.options[q.answer].substring(3)}</div>
+              ${!correct && ua!==undefined ? `<div style="font-size:12px;color:var(--danger)">❌ 你的答案：${'ABCD'[ua]}. ${q.options[ua].substring(3)}</div>` : ''}
+              ${q.analysis ? `<div style="font-size:12px;color:var(--text-secondary);margin-top:4px">💡 ${q.analysis}</div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+        <button class="btn btn-primary btn-lg" style="margin-top:12px" onclick="App.navigateTo('exam-paper-setup','套卷模考')">再来一套</button>
+        <button class="btn btn-outline btn-lg" style="margin-top:8px" onclick="App.navigateTo('exam-history','模考历史')">查看历史曲线</button>
+      `;
+    },
+
+    'exam-history': function () {
+      const records = (DB.get('exam_records') || []).slice().sort((a,b)=> (a.ts||0) - (b.ts||0));
+      if (!records.length) return '<div class="empty-state"><div class="empty-state-icon">📈</div><div class="empty-state-text">暂无模考记录，去完成一套模考吧</div></div>';
+      const latest = records[records.length-1];
+      const best = records.reduce((m,r)=> r.score>m.score?r:m, records[0]);
+      const avg = Math.round(records.reduce((s,r)=>s+r.score,0)/records.length);
+      return `
+        <div class="grid-2" style="margin-bottom:12px">
+          ${this._statCard('模考次数', records.length, '#3b82f6')}
+          ${this._statCard('平均分', avg, '#8b5cf6')}
+          ${this._statCard('最高分', best.score, '#10b981')}
+          ${this._statCard('最近一次', latest.score, '#f59e0b')}
+        </div>
+        <div class="card"><div class="card-title">📈 分数曲线</div>
+          ${this._renderScoreCurve(records)}
+        </div>
+        <div class="card"><div class="card-title">📋 历次记录</div>
+          ${records.slice().reverse().map(r=>`
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+              <div style="width:44px;height:44px;border-radius:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--primary)">${r.score}</div>
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:500">${r.subject} · ${r.year==='历年'?'历年':r.year+'年'}</div>
+                <div style="font-size:12px;color:var(--text-secondary)">${r.date} ${r.time} · 正确率 ${r.accuracy}% · ${r.correct}/${r.total} 题</div>
+              </div>
+            </div>`).join('')}
+        </div>
       `;
     },
 
@@ -2071,8 +2245,8 @@ const App = {
           </div>
           <div class="form-group"><label class="form-label">格式说明</label>
             <div style="font-size:12px;color:var(--text-secondary);background:var(--bg2);padding:10px;border-radius:8px;line-height:1.9">
-              每行一道题，用 <b>|</b> 或 <b>Tab</b> 分隔 10 列：<br>
-              科目 | 题型 | 分类 | 题干 | 选项A | 选项B | 选项C | 选项D | 答案 | 解析<br>
+              每行一道题，用 <b>|</b> 或 <b>Tab</b> 分隔：<br>
+              科目 | 题型 | 分类 | 题干 | 选项A | 选项B | 选项C | 选项D | 答案 | 解析 | 年份(可选)<br>
               答案填 <b>A/B/C/D</b> 或 <b>1/2/3/4</b>；也支持 JSON 数组（以 [ 开头）。
             </div>
           </div>
@@ -2441,6 +2615,220 @@ const App = {
     btn.className = 'btn btn-sm ' + (isFav ? 'btn-primary' : 'btn-outline');
   },
 
+  // ===== 套卷模考 LOGIC =====
+  _fmtSec(s) {
+    s = Math.max(0, Math.floor(s));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    const mm = String(m).padStart(2, '0'), ss = String(sec).padStart(2, '0');
+    return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+  },
+
+  paperPickSubject(s, el) {
+    App.paperSetup.subject = s;
+    document.querySelectorAll('#paperSubjectRow .filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    this.updatePaperPreview();
+  },
+
+  paperPickYear(y, el) {
+    App.paperSetup.year = y;
+    document.querySelectorAll('#paperYearRow .filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    this.updatePaperPreview();
+  },
+
+  paperPickCount(n, el) {
+    App.paperSetup.count = n;
+    document.querySelectorAll('#paperCountRow .filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    this.updatePaperPreview();
+  },
+
+  updatePaperPreview() {
+    const el = document.getElementById('paperPreview');
+    if (!el) return;
+    const s = App.paperSetup;
+    if (!s.subject) { el.textContent = '请先选择科目'; return; }
+    let pool = DB.get('questions').filter(q => q.subject === s.subject);
+    if (s.year !== '全部') pool = pool.filter(q => q.year === s.year);
+    if (!pool.length) { el.textContent = '⚠️ 该科目' + (s.year !== '全部' ? '·' + s.year + '年' : '') + '暂无题目'; return; }
+    const count = s.count === 0 ? pool.length : Math.min(s.count, pool.length);
+    const minutes = Math.max(15, Math.round(count * 1.5));
+    el.textContent = `共 ${pool.length} 题可选，本次抽取 ${count} 题，考试时长约 ${minutes} 分钟`;
+  },
+
+  startPaper() {
+    const s = App.paperSetup;
+    if (!s.subject) { App.toast('请先选择科目'); return; }
+    let pool = DB.get('questions').filter(q => q.subject === s.subject);
+    if (s.year !== '全部') pool = pool.filter(q => q.year === s.year);
+    if (!pool.length) { App.toast('该科目' + (s.year !== '全部' ? '·' + s.year + '年' : '') + '暂无题目'); return; }
+    pool = pool.slice().sort(() => Math.random() - 0.5);
+    const count = s.count === 0 ? pool.length : Math.min(s.count, pool.length);
+    const questions = pool.slice(0, count);
+    const seconds = Math.max(15, Math.round(count * 1.5)) * 60;
+    App.paper = { subject: s.subject, year: s.year === '全部' ? '历年' : s.year, questions, total: questions.length };
+    App.paperAnswers = {};
+    App.paperMarked = {};
+    App.paperIndex = 0;
+    App.paperSeconds = seconds;
+    App.paperTotalSeconds = seconds;
+    App.paperStartAt = Date.now();
+    App.paperResult = null;
+    this._clearPaperDraft();
+    this.startPaperTimer();
+    App.navigateTo('exam-paper-taking', '套卷模考');
+  },
+
+  resumePaper() {
+    const d = this._getPaperDraft();
+    if (!d) { App.toast('没有可继续的模考'); return; }
+    App.paper = { subject: d.subject, year: d.year, questions: d.questions, total: d.questions.length };
+    App.paperAnswers = d.answers || {};
+    App.paperMarked = d.marked || {};
+    App.paperIndex = d.index || 0;
+    App.paperSeconds = d.seconds;
+    App.paperTotalSeconds = d.totalSeconds;
+    App.paperStartAt = Date.now() - ((d.totalSeconds - d.seconds) * 1000);
+    App.paperResult = null;
+    this.startPaperTimer();
+    App.navigateTo('exam-paper-taking', '套卷模考');
+  },
+
+  startPaperTimer() {
+    this.stopPaperTimer();
+    App.paperTimer = setInterval(() => {
+      App.paperSeconds--;
+      const el = document.getElementById('paperClock');
+      if (el) {
+        el.textContent = App._fmtSec(App.paperSeconds);
+        el.style.color = App.paperSeconds < 300 ? 'var(--danger)' : 'var(--primary)';
+      }
+      if (App.paperSeconds <= 0) { App.paperSubmit(); }
+    }, 1000);
+  },
+
+  stopPaperTimer() {
+    if (App.paperTimer) { clearInterval(App.paperTimer); App.paperTimer = null; }
+  },
+
+  paperSelectAnswer(idx) {
+    const q = App.paper.questions[App.paperIndex];
+    App.paperAnswers[q.id] = idx;
+    App.renderPage('exam-paper-taking');
+  },
+
+  paperToggleMark() {
+    const q = App.paper.questions[App.paperIndex];
+    if (App.paperMarked[q.id]) { delete App.paperMarked[q.id]; } else { App.paperMarked[q.id] = true; }
+    App.renderPage('exam-paper-taking');
+  },
+
+  paperPrev() { if (App.paperIndex > 0) { App.paperIndex--; App.renderPage('exam-paper-taking'); } },
+  paperNext() {
+    if (App.paperIndex < App.paper.total - 1) { App.paperIndex++; App.renderPage('exam-paper-taking'); }
+  },
+  paperJump(idx) { App.paperIndex = idx; App.renderPage('exam-paper-taking'); },
+
+  paperSaveExit() {
+    this._savePaperDraft();
+    this.stopPaperTimer();
+    App.toast('已保存进度，可随时继续');
+    App.goBack();
+  },
+
+  _paperDraftKey() { return 'yck_paper_draft'; },
+  _savePaperDraft() {
+    if (!App.paper) return;
+    try {
+      localStorage.setItem(this._paperDraftKey(), JSON.stringify({
+        subject: App.paper.subject, year: App.paper.year, questions: App.paper.questions,
+        answers: App.paperAnswers, marked: App.paperMarked, index: App.paperIndex,
+        seconds: App.paperSeconds, totalSeconds: App.paperTotalSeconds,
+      }));
+    } catch (e) {}
+  },
+  _getPaperDraft() {
+    try { return JSON.parse(localStorage.getItem(this._paperDraftKey()) || 'null'); } catch (e) { return null; }
+  },
+  _clearPaperDraft() {
+    try { localStorage.removeItem(this._paperDraftKey()); } catch (e) {}
+  },
+
+  _paperLeaveGuard() {
+    if (this.currentPage === 'exam-paper-taking' && this.paper) {
+      this._savePaperDraft();
+      this.stopPaperTimer();
+    }
+  },
+
+  paperSubmit() {
+    if (!App.paper) return;
+    this.stopPaperTimer();
+    const total = App.paper.total;
+    let correct = 0, wrong = 0, unanswered = 0;
+    const categoryStats = {};
+    App.paper.questions.forEach(q => {
+      const ua = App.paperAnswers[q.id];
+      const c = q.category || '其他';
+      if (!categoryStats[c]) categoryStats[c] = { total: 0, correct: 0 };
+      categoryStats[c].total++;
+      if (ua === undefined) { unanswered++; }
+      else if (ua === q.answer) { correct++; categoryStats[c].correct++; }
+      else { wrong++; DB.addError(q.id); }
+    });
+    const answered = correct + wrong;
+    const score = Math.round(correct / total * 100);
+    const accuracy = answered ? Math.round(correct / answered * 100) : 0;
+    const duration = Math.round((Date.now() - App.paperStartAt) / 1000);
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const record = {
+      ts: Date.now(),
+      subject: App.paper.subject,
+      year: App.paper.year,
+      date: `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`,
+      time: `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+      total, correct, wrong, unanswered,
+      score, accuracy, duration,
+      categoryStats,
+    };
+    const records = DB.get('exam_records') || [];
+    records.push(record);
+    DB.set('exam_records', records);
+    // 同步学习统计
+    const stats = DB.get('studyStats');
+    stats.totalQuestions += total;
+    stats.correctQuestions += correct;
+    DB.set('studyStats', stats);
+    App.paperResult = { ...record, questions: App.paper.questions, answers: App.paperAnswers };
+    App.paper = null;
+    this._clearPaperDraft();
+    App.navigateTo('exam-paper-result', '模考结果');
+  },
+
+  _renderScoreCurve(records) {
+    if (!records || records.length < 2) return '<div class="empty-state-text">至少需要 2 次模考记录才能绘制曲线</div>';
+    const W = 660, H = 220, padL = 40, padR = 16, padT = 16, padB = 40;
+    const scores = records.map(r => r.score);
+    const lo = Math.max(0, Math.floor((Math.min(...scores) - 10) / 10) * 10);
+    const hi = Math.min(100, Math.ceil((Math.max(...scores) + 10) / 10) * 10);
+    const span = (hi - lo) || 1;
+    const n = records.length;
+    const x = i => padL + (n === 1 ? 0 : (W - padL - padR) * i / (n - 1));
+    const y = s => padT + (H - padT - padB) * (1 - (s - lo) / span);
+    let grid = '';
+    for (let g = lo; g <= hi; g += 10) {
+      const gy = y(g).toFixed(1);
+      grid += `<line x1="${padL}" y1="${gy}" x2="${W - padR}" y2="${gy}" style="stroke:var(--border)" stroke-dasharray="3,3"/>`;
+      grid += `<text x="${padL - 6}" y="${gy}" font-size="11" style="fill:var(--text-secondary)" text-anchor="end" dominant-baseline="middle">${g}</text>`;
+    }
+    const pts = records.map((r, i) => `${x(i).toFixed(1)},${y(r.score).toFixed(1)}`).join(' ');
+    const dots = records.map((r, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(r.score).toFixed(1)}" r="4" fill="#3b82f6"><title>${r.date} ${r.subject}：${r.score}分</title></circle>`).join('');
+    const labels = records.map((r, i) => `<text x="${x(i).toFixed(1)}" y="${H - 16}" font-size="10" style="fill:var(--text-secondary)" text-anchor="middle">${r.date.slice(5)}</text>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${grid}<polyline points="${pts}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${dots}${labels}</svg>`;
+  },
+
   // ===== ERROR BOOK =====
   filterErrors(subject, el) {
     document.querySelectorAll('#errorFilter .filter-chip').forEach(c => c.classList.remove('active'));
@@ -2771,8 +3159,8 @@ const App = {
   // ===== 批量导入 =====
   _batchMeta: {
     questions: {
-      hint: '两种格式均可：① 表格（推荐）：每行一题，用 | 或 Tab 分隔 10 列——科目|题型|分类|题干|选项A|选项B|选项C|选项D|答案|解析，答案填 A/B/C/D 或 1/2/3/4；② JSON 数组：字段 subject/type/category/stem/options/answer/analysis。',
-      example: '数学|单选|函数|函数 f(x)=x+1 在 x=2 处的值是？|A.1|B.2|C.3|D.4|C|f(2)=2+1=3\n语文|单选|古诗文|下列哪句出自《劝学》？|A.落霞与孤鹜齐飞|B.青出于蓝而胜于蓝|C.无边落木萧萧下|D.床前明月光|B|"青，取之于蓝"出自荀子《劝学》'
+      hint: '两种格式均可：① 表格（推荐）：每行一题，用 | 或 Tab 分隔——科目|题型|分类|题干|选项A|选项B|选项C|选项D|答案|解析|年份(可选)，答案填 A/B/C/D 或 1/2/3/4；② JSON 数组：字段 subject/type/category/stem/options/answer/analysis/year。',
+      example: '数学|单选|函数|函数 f(x)=x+1 在 x=2 处的值是？|A.1|B.2|C.3|D.4|C|f(2)=2+1=3|2026\n语文|单选|古诗文|下列哪句出自《劝学》？|A.落霞与孤鹜齐飞|B.青出于蓝而胜于蓝|C.无边落木萧萧下|D.床前明月光|B|青，取之于蓝，而青于蓝|2025'
     },
     words: {
       hint: '每行一个单词，格式：单词,释义（可选第三列为音标）。中英文逗号均可。',
@@ -2874,7 +3262,7 @@ const App = {
         if (!q || !q.subject || !q.stem || !Array.isArray(q.options) || q.options.length < 2 || q.answer == null) {
           errors.push('第 ' + (i + 1) + ' 条题目缺少必要字段（subject/stem/options/answer）'); return;
         }
-        list.push({ id: Date.now() + i, subject: String(q.subject), type: q.type || '单选', category: q.category || '', stem: String(q.stem), options: q.options.map(String), answer: parseInt(q.answer), analysis: q.analysis || '' });
+        list.push({ id: Date.now() + i, subject: String(q.subject), type: q.type || '单选', category: q.category || '', stem: String(q.stem), options: q.options.map(String), answer: parseInt(q.answer), analysis: q.analysis || '', year: q.year || '2026' });
       });
       return { fatal: null, count: list.length, errors, list };
     }
@@ -2890,10 +3278,11 @@ const App = {
       const opts = [parts[4], parts[5], parts[6], parts[7]].map(s => (s || '').trim()).filter(s => s);
       const answerRaw = (parts[8] || '').trim();
       const analysis = (parts[9] || '').trim();
+      const year = (parts[10] || '').trim() || '2026';
       if (!subject || !stem || opts.length < 2 || !answerRaw) { errors.push('第 ' + (i + 1) + ' 行缺少科目/题干/选项/答案'); return; }
       const ans = this._parseAnswerIndex(answerRaw, opts.length);
       if (ans == null) { errors.push('第 ' + (i + 1) + ' 行答案无法识别（应为 A/B/C/D 或 1/2/3/4）'); return; }
-      list.push({ id: Date.now() + i, subject, type, category, stem, options: opts, answer: ans, analysis });
+      list.push({ id: Date.now() + i, subject, type, category, stem, options: opts, answer: ans, analysis, year });
     });
     return { fatal: null, count: list.length, errors, list };
   },
@@ -2954,11 +3343,11 @@ const App = {
   },
 
   downloadQuestionsTemplate() {
-    const header = '科目|题型|分类|题干|选项A|选项B|选项C|选项D|答案|解析';
+    const header = '科目|题型|分类|题干|选项A|选项B|选项C|选项D|答案|解析|年份';
     const rows = [
-      '数学|单选|函数|函数 f(x)=x+1 在 x=2 处的值是？|A.1|B.2|C.3|D.4|C|f(2)=2+1=3',
-      '语文|单选|古诗文|下列哪句出自《劝学》？|A.落霞与孤鹜齐飞|B.青出于蓝而胜于蓝|C.无边落木萧萧下|D.床前明月光|B|青，取之于蓝，而青于蓝。',
-      '英语|单选|词汇|abandon 的中文意思是？|A.接受|B.放弃|C.获得|D.适应|B|abandon 意为放弃。',
+      '数学|单选|函数|函数 f(x)=x+1 在 x=2 处的值是？|A.1|B.2|C.3|D.4|C|f(2)=2+1=3|2026',
+      '语文|单选|古诗文|下列哪句出自《劝学》？|A.落霞与孤鹜齐飞|B.青出于蓝而胜于蓝|C.无边落木萧萧下|D.床前明月光|B|青，取之于蓝，而青于蓝|2025',
+      '英语|单选|词汇|abandon 的中文意思是？|A.接受|B.放弃|C.获得|D.适应|B|abandon 意为放弃。|2026',
     ].join('\n');
     const text = header + '\n' + rows;
     const blob = new Blob(['\uFEFF' + text], { type: 'text/csv;charset=utf-8' });

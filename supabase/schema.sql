@@ -27,6 +27,7 @@ create table if not exists public.questions (
   options jsonb not null default '[]',
   answer int not null,
   analysis text,
+  year text,
   created_at timestamptz default now()
 );
 

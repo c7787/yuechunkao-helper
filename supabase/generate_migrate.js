@@ -80,6 +80,7 @@ function insert(table, cols, rows) {
 const qRows = data.questions.map((q) => [
   sqlNum(q.id), sqlStr(q.subject), sqlStr(q.type), sqlStr(q.category),
   sqlStr(q.stem), sqlStr(JSON.stringify(q.options)), sqlNum(q.answer), sqlStr(q.analysis),
+  sqlStr(q.year || ''),
 ]);
 
 const wRows = data.words.map((w) => [
@@ -135,6 +136,8 @@ alter table public.announcements   alter column id drop identity if exists;
 alter table public.materials add column if not exists upload_time text;
 alter table public.materials add column if not exists content text;
 alter table public.materials add column if not exists file_url text;
+-- questions 表补充年份列
+alter table public.questions add column if not exists year text;
 
 -- ============================================================
 -- 3. 灌入数据
@@ -143,7 +146,7 @@ alter table public.materials add column if not exists file_url text;
 
 const parts = [];
 parts.push('-- 题库 (' + data.questions.length + ' 条)');
-parts.push(insert('questions', ['id', 'subject', 'type', 'category', 'stem', 'options', 'answer', 'analysis'], qRows));
+parts.push(insert('questions', ['id', 'subject', 'type', 'category', 'stem', 'options', 'answer', 'analysis', 'year'], qRows));
 parts.push('');
 parts.push('-- 单词 (' + data.words.length + ' 条)');
 parts.push(insert('words', ['id', 'word', 'meaning', 'phonetic'], wRows));
