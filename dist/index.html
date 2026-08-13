@@ -297,6 +297,15 @@ const sb = (typeof supabase !== 'undefined') ? supabase.createClient(SUPABASE_UR
 const ADMIN_USERNAME = 'admin';
 const ADMIN_PASSWORD = 'zxc0123';
 
+// ===== 本地 AI 作文批改（WebLLM 浏览器端推理）=====
+const AI_MODEL_ID = 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'; // 官方模型库无 Qwen-1.8B，最接近的 1.5B instruct 中文模型
+const AI_MODEL_BASE = 'https://hf-mirror.com/mlc-ai/' + AI_MODEL_ID + '/resolve/main/'; // 国内镜像；海外可改回 https://huggingface.co/mlc-ai/...
+const AI_SYSTEM_PROMPT = '你是一位资深的高考作文阅卷老师，中文水平高。请严格按以下格式批改学生作文，用 Markdown 输出：【评分】X分（满分60分）；【总评】一句话；【优点】分点；【问题与错别字】分点；【修改建议】分点；【优化范文】给出润色后的完整范文。';
+
+// WebLLM 引擎缓存（模块级，复用避免重复下载）
+let _aiEngine = null;
+let _aiEngineModel = null;
+
 // ===== EXAM TIME =====
 // 2027年1月广东学考（语数英）预计考试时间
 const EXAM_TIME = new Date('2027-01-08T09:00:00+08:00');
@@ -327,6 +336,7 @@ const DB = {
       policies: [],
       posts: [],
       exam_records: [],
+      essayDrafts: [],
       announcements: [
         { title: '2027年广东春考时间节点提醒', content: '语文、数学、英语学考预计于2027年1月初举行，请同学们合理安排复习时间。', time: '2026-08-01' },
         { title: '征集志愿补录通知', content: '2026年春考补录批次已于7月完成，请关注后续2027年补录时间节点。', time: '2026-07-15' },
@@ -843,7 +853,7 @@ const CloudSync = {
 };
 
 // ===== 个人数据云端同步（user_data 通用 JSON 表）=====
-const PERSONAL_KEYS = ['studyPlan', 'errorBook', 'favorites', 'studyStats', 'exam_records'];
+const PERSONAL_KEYS = ['studyPlan', 'errorBook', 'favorites', 'studyStats', 'exam_records', 'essayDrafts'];
 
 const PersonalSync = {
   _queue: Promise.resolve(),
@@ -1843,6 +1853,10 @@ const App = {
     'essay-list': function () {
       const mats = DB.get('essayMaterials');
       return `
+        <div class="card" style="cursor:pointer;background:linear-gradient(135deg,var(--primary),#7c3aed);color:#fff;border:none" onclick="App.navigateTo('essay-ai-grade','AI作文批改')">
+          <div style="font-size:18px;font-weight:700">✍️ AI 作文批改</div>
+          <div style="font-size:13px;opacity:.92;margin-top:4px">浏览器本地 AI 模型批改：打分 · 找错 · 修改建议 · 优化范文，无需联网调用后端</div>
+        </div>
         <div class="filter-row" id="essayFilter">
           <div class="filter-chip active" onclick="App.filterEssays('all',this)">全部</div>
           <div class="filter-chip" onclick="App.filterEssays('语文时事素材',this)">语文时事素材</div>
@@ -1857,6 +1871,34 @@ const App = {
               <div class="card-subtitle">${m.date}</div>
             </div>`).join('')}
         </div>
+      `;
+    },
+
+    // AI ESSAY GRADING
+    'essay-ai-grade': function () {
+      const drafts = (DB.get('essayDrafts') || []).slice().reverse();
+      return `
+        <div class="card"><div class="card-title">✍️ AI 作文批改</div><div class="card-subtitle">粘贴作文，浏览器本地 Qwen 模型批改（首次需联网下载模型，之后可离线使用）</div></div>
+        <div class="card">
+          <div class="form-group"><label class="form-label">学生作文</label>
+            <textarea class="form-textarea" id="aiEssay" rows="12" placeholder="在此粘贴要批改的作文（600-1000字效果最佳）..."></textarea>
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">💡 首次使用会自动下载模型（约 1-2GB），请保持网络畅通；下载完成后缓存在浏览器，之后无需联网。</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-block" id="aiGradeBtn" onclick="App.essayAiGrade()">🚀 开始批改</button>
+          </div>
+          <div id="aiProgress" style="display:none;margin-top:12px"></div>
+        </div>
+        <div id="aiResult" style="margin-top:12px"></div>
+        ${drafts.length ? `<div class="card" style="margin-top:12px"><div class="card-title">📂 已保存的批改草稿（${drafts.length}）</div>
+          ${drafts.map(d => `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:13px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${this._esc((d.content||'').slice(0,40))}${(d.content||'').length>40?'...':''}</div>
+              <button class="btn btn-sm btn-outline" onclick="App.essayAiLoadDraft(${d.id})">查看</button>
+            </div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${d.date}</div>
+          </div>`).join('')}
+        </div>` : ''}
       `;
     },
 
@@ -2905,6 +2947,128 @@ const App = {
     return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${grid}<polyline points="${pts}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${dots}${labels}</svg>`;
   },
 
+  // ===== AI 作文批改（WebLLM 本地推理）=====
+  _aiLast: null,
+
+  async essayAiGrade() {
+    const ta = document.getElementById('aiEssay');
+    const essay = (ta ? ta.value : '').trim();
+    if (!essay) { App.toast('请先粘贴作文'); return; }
+    if (essay.length < 20) { App.toast('作文内容太短，请粘贴完整作文'); return; }
+
+    // 检查 WebGPU 支持
+    if (typeof navigator === 'undefined' || !navigator.gpu) {
+      this._showAiError('当前浏览器不支持 WebGPU，无法本地运行模型。请使用最新版桌面 Chrome / Edge 浏览器，并确认已开启硬件加速。');
+      return;
+    }
+
+    const btn = document.getElementById('aiGradeBtn');
+    const progEl = document.getElementById('aiProgress');
+    const resultEl = document.getElementById('aiResult');
+    if (btn) { btn.disabled = true; btn.textContent = '批改中...'; }
+    if (resultEl) resultEl.innerHTML = '';
+
+    try {
+      // 1. 加载 WebLLM 库
+      this._aiProgress(progEl, 2, '正在加载 AI 引擎...');
+      const webllm = await window.__loadWebLLM();
+
+      // 2. 创建/复用引擎
+      if (!_aiEngine || _aiEngineModel !== AI_MODEL_ID) {
+        this._aiProgress(progEl, 5, '正在下载模型（首次约 1-2GB，请耐心等待）...');
+        const prebuilt = webllm.prebuiltAppConfig || { model_list: [] };
+        const cfg = JSON.parse(JSON.stringify(prebuilt));
+        const entry = (cfg.model_list || []).find(m => m.model_id === AI_MODEL_ID);
+        if (entry) {
+          entry.model = AI_MODEL_BASE;
+          entry.model_lib = AI_MODEL_BASE + AI_MODEL_ID + '-webgpu.wasm';
+        }
+        _aiEngine = await webllm.CreateMLCEngine(AI_MODEL_ID, {
+          appConfig: cfg,
+          initProgressCallback: (p) => {
+            const pct = Math.round((p.progress || 0) * 100);
+            this._aiProgress(progEl, pct, (p.text || '正在下载模型') + ' · ' + pct + '%');
+          },
+        });
+        _aiEngineModel = AI_MODEL_ID;
+      }
+
+      // 3. 批改（流式）
+      this._aiProgress(progEl, 100, '模型已就绪，正在批改作文...');
+      const messages = [
+        { role: 'system', content: AI_SYSTEM_PROMPT },
+        { role: 'user', content: '请批改下面这篇学生作文：\n\n' + essay },
+      ];
+      const chunks = await _aiEngine.chat.completions.create({
+        messages,
+        temperature: 0.7,
+        max_tokens: 2048,
+        stream: true,
+      });
+
+      resultEl.innerHTML = '<div class="card"><div class="card-title">✍️ 批改结果</div><div id="aiReplyText" style="font-size:14px;line-height:1.85;white-space:pre-wrap;word-break:break-word"></div></div>';
+      const replyEl = document.getElementById('aiReplyText');
+      let reply = '';
+      for await (const chunk of chunks) {
+        reply += (chunk.choices && chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content) || '';
+        if (replyEl) replyEl.textContent = reply;
+      }
+      if (progEl) progEl.style.display = 'none';
+      App._aiLast = { content: essay, reply };
+      if (resultEl) {
+        resultEl.insertAdjacentHTML('beforeend', '<div style="margin-top:12px;display:flex;gap:8px"><button class="btn btn-primary btn-block" onclick="App.essayAiSave()">💾 保存到草稿箱</button></div>');
+      }
+      App.toast('批改完成');
+    } catch (e) {
+      console.warn('AI 批改失败', e);
+      this._showAiError('AI 批改失败：' + (e && e.message ? e.message : '未知错误') + '。可能是模型下载被网络中断，请稍后重试（已下载部分会缓存）。');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '🚀 开始批改'; }
+    }
+  },
+
+  _aiProgress(el, pct, text) {
+    if (!el) return;
+    el.style.display = '';
+    el.innerHTML = '<div class="card" style="border-left:4px solid var(--primary)"><div style="font-size:13px">⏳ ' + this._esc(text) + '</div><div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:' + pct + '%"></div></div></div>';
+  },
+
+  _showAiError(msg) {
+    const resultEl = document.getElementById('aiResult');
+    if (resultEl) resultEl.innerHTML = '<div class="card"><div class="card-title" style="color:var(--danger)">⚠️ 批改失败</div><div style="font-size:13px;color:var(--danger);line-height:1.7">' + this._esc(msg) + '</div></div>';
+    const progEl = document.getElementById('aiProgress');
+    if (progEl) progEl.style.display = 'none';
+    App.toast('批改失败');
+  },
+
+  essayAiSave() {
+    const last = App._aiLast;
+    if (!last || !last.reply) { App.toast('没有可保存的批改结果'); return; }
+    const drafts = DB.get('essayDrafts') || [];
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    drafts.push({
+      id: Date.now(),
+      content: last.content,
+      result: last.reply,
+      date: `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
+    });
+    DB.set('essayDrafts', drafts);
+    App.toast('已保存到草稿箱');
+  },
+
+  essayAiLoadDraft(id) {
+    const d = (DB.get('essayDrafts') || []).find(x => x.id === id);
+    if (!d) { App.toast('草稿不存在'); return; }
+    const ta = document.getElementById('aiEssay');
+    if (ta) ta.value = d.content || '';
+    const resultEl = document.getElementById('aiResult');
+    if (resultEl) {
+      resultEl.innerHTML = '<div class="card"><div class="card-title">✍️ 批改结果</div><div style="font-size:14px;line-height:1.85;white-space:pre-wrap;word-break:break-word">' + this._esc(d.result || '') + '</div></div>';
+    }
+    App.toast('已载入草稿');
+  },
+
   // ===== ERROR BOOK =====
   filterErrors(subject, el) {
     document.querySelectorAll('#errorFilter .filter-chip').forEach(c => c.classList.remove('active'));
@@ -3877,6 +4041,28 @@ function goBack() { App.goBack(); }
 
 // Init
 document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+<script type="module">
+// ===== WebLLM 本地 AI 引擎加载器 =====
+// 惰性加载（点击批改时才 import），多 CDN 自动切换，暴露全局 window.__loadWebLLM
+let _webllmPromise = null;
+window.__loadWebLLM = function () {
+  if (!_webllmPromise) {
+    _webllmPromise = (async () => {
+      const urls = [
+        'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.84/+esm',
+        'https://esm.run/@mlc-ai/web-llm',
+        'https://unpkg.com/@mlc-ai/web-llm@0.2.84/+esm',
+      ];
+      let lastErr = null;
+      for (const u of urls) {
+        try { return await import(u); } catch (e) { lastErr = e; }
+      }
+      throw lastErr || new Error('WebLLM 加载失败');
+    })();
+  }
+  return _webllmPromise;
+};
 </script>
 </body>
 </html>
