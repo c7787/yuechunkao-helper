@@ -347,7 +347,10 @@ const DB = {
     this._initPolicies();
   },
   get(k) { return JSON.parse(localStorage.getItem('yck_' + k) || 'null'); },
-  set(k, v) { localStorage.setItem('yck_' + k, JSON.stringify(v)); },
+  set(k, v) {
+    localStorage.setItem('yck_' + k, JSON.stringify(v));
+    if (cloudSyncReady && CLOUD_TABLES[k]) CloudSync.push(k);
+  },
 
   _initQuestions() {
     if (this.get('questions')?.length) return;
@@ -682,6 +685,64 @@ const DB = {
   isError(qId) { return (this.get('errorBook') || []).includes(qId); },
 };
 
+// ===== 云端同步层（Supabase）=====
+// 本地 key → 云端表名 + 字段映射（toRow: 本地→云端，fromRow: 云端→本地）
+const CLOUD_TABLES = {
+  questions:      { table: 'questions',       toRow: (it) => ({ id: it.id, subject: it.subject, type: it.type, category: it.category, stem: it.stem, options: it.options || [], answer: it.answer, analysis: it.analysis }), fromRow: (r) => ({ id: r.id, subject: r.subject, type: r.type, category: r.category, stem: r.stem, options: r.options || [], answer: r.answer, analysis: r.analysis }) },
+  words:          { table: 'words',           toRow: (it) => ({ id: it.id, word: it.word, meaning: it.meaning, phonetic: it.phonetic || '' }), fromRow: (r) => ({ id: r.id, word: r.word, meaning: r.meaning, phonetic: r.phonetic || '' }) },
+  templates:      { table: 'templates',       toRow: (it) => ({ id: it.id, subject: it.subject, category: it.category, title: it.title, content: it.content }), fromRow: (r) => ({ id: r.id, subject: r.subject, category: r.category, title: r.title, content: r.content }) },
+  scoreLines:     { table: 'score_lines',     toRow: (it) => ({ id: it.id, year: it.year, batch: it.batch, college: it.college, major: it.major, score: it.score, property: it.property, region: it.region }), fromRow: (r) => ({ id: r.id, year: r.year, batch: r.batch, college: r.college, major: r.major, score: r.score, property: r.property, region: r.region }) },
+  materials:      { table: 'materials',       toRow: (it) => ({ id: it.id, name: it.name, type: it.type, category: it.category, upload_time: it.uploadTime }), fromRow: (r) => ({ id: r.id, name: r.name, type: r.type, category: r.category, uploadTime: r.upload_time }) },
+  essayMaterials: { table: 'essay_materials', toRow: (it) => ({ id: it.id, type: it.type, title: it.title, content: it.content, date: it.date }), fromRow: (r) => ({ id: r.id, type: r.type, title: r.title, content: r.content, date: r.date }) },
+  policies:       { table: 'policies',        toRow: (it) => ({ id: it.id, title: it.title, content: it.content, date: it.date }), fromRow: (r) => ({ id: r.id, title: r.title, content: r.content, date: r.date }) },
+  announcements:  { table: 'announcements',   toRow: (it) => ({ id: it.id, title: it.title, content: it.content, date: it.time }), fromRow: (r) => ({ title: r.title, content: r.content, time: r.date }) },
+};
+
+// 云端同步就绪标志：init 完成会话恢复与数据拉取后才置为 true，避免初始化阶段误推送
+let cloudSyncReady = false;
+
+const CloudSync = {
+  _queue: Promise.resolve(),
+  _enqueue(fn) {
+    this._queue = this._queue.then(fn).catch((e) => console.warn('云端同步失败', e));
+    return this._queue;
+  },
+
+  // 拉取单张表：云端非空则覆盖本地（数据上云）
+  async pull(key) {
+    if (!sb) return;
+    const cfg = CLOUD_TABLES[key];
+    if (!cfg) return;
+    try {
+      const { data, error } = await sb.from(cfg.table).select('*').order('id', { ascending: true });
+      if (error || !data || !data.length) return;
+      DB.set(key, data.map(cfg.fromRow));
+    } catch (e) { /* 拉取失败保持本地数据 */ }
+  },
+
+  // 拉取全部公共数据（init 时调用）
+  async pullAll() {
+    for (const key of Object.keys(CLOUD_TABLES)) await this.pull(key);
+  },
+
+  // 推送整表：删除后重建（正确覆盖增/改/删），串行执行避免并发冲突
+  push(key) {
+    if (!sb || !cloudSyncReady) return Promise.resolve();
+    const cfg = CLOUD_TABLES[key];
+    if (!cfg) return Promise.resolve();
+    return this._enqueue(async () => {
+      const items = DB.get(key) || [];
+      await sb.from(cfg.table).delete().neq('id', -1);
+      if (items.length) {
+        const rows = items.map(cfg.toRow);
+        for (let i = 0; i < rows.length; i += 500) {
+          await sb.from(cfg.table).insert(rows.slice(i, i + 500));
+        }
+      }
+    });
+  },
+};
+
 DB.init();
 
 // ===== APP STATE =====
@@ -715,7 +776,10 @@ const App = {
         const { data } = await sb.auth.getSession();
         this._currentUser = data.session ? data.session.user : null;
       } catch (e) { this._currentUser = null; }
+      // 拉取云端公共数据（非空则覆盖本地，实现数据上云）
+      try { await CloudSync.pullAll(); } catch (e) {}
     }
+    cloudSyncReady = true;
     this.renderPage('home');
     this.updateNav();
     document.getElementById('headerBack').addEventListener('click', (e) => { e.preventDefault(); this.goBack(); });
