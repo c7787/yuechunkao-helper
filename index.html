@@ -301,7 +301,7 @@ const ADMIN_PASSWORD = 'zxc0123';
 const EXAM_TIME = new Date('2027-01-08T09:00:00+08:00');
 
 // ===== DATA STORE =====
-const DATA_VERSION = 3;
+const DATA_VERSION = 4;
 const DB = {
   init() {
     // 数据版本升级时，清除旧的种子数据，重新初始化
@@ -725,10 +725,10 @@ const DB = {
   _initMaterials() {
     if (this.get('materials')?.length) return;
     this.set('materials', [
-      { id: 1, name: '2024年广东学考数学真题', type: 'PDF', category: '真题套卷', uploadTime: '2026-08-01' },
-      { id: 2, name: '语文古诗文默写重点汇编', type: 'PDF', category: '语文资料', uploadTime: '2026-08-02' },
-      { id: 3, name: '英语3500核心词汇表', type: 'PDF', category: '英语资料', uploadTime: '2026-08-03' },
-      { id: 4, name: '数学函数与导数专题训练', type: 'Word', category: '数学资料', uploadTime: '2026-08-04' },
+      { id: 1, name: '2024年广东学考数学真题', type: 'PDF', category: '真题套卷', uploadTime: '2026-08-01', content: '2024年广东学考数学真题（节选）\n\n一、选择题\n1. 函数 f(x)=2x+1 在 x=1 处的值为（ ）\n   A. 1   B. 2   C. 3   D. 4\n\n2. 下列函数中，是奇函数的是（ ）\n   A. y=x²   B. y=x³   C. y=cosx   D. y=|x|\n\n（完整版请到管理后台补充文件链接）' },
+      { id: 2, name: '语文古诗文默写重点汇编', type: '文本', category: '语文资料', uploadTime: '2026-08-02', content: '语文古诗文默写重点汇编\n\n【必背篇目】\n1. 《劝学》（荀子）：青，取之于蓝，而青于蓝；冰，水为之，而寒于水。\n2. 《师说》（韩愈）：师者，所以传道受业解惑也。\n3. 《赤壁赋》（苏轼）：寄蜉蝣于天地，渺沧海之一粟。\n4. 《登高》（杜甫）：无边落木萧萧下，不尽长江滚滚来。\n5. 《静夜思》（李白）：床前明月光，疑是地上霜。\n\n【常考名句】\n- 不积跬步，无以至千里；不积小流，无以成江海。\n- 落霞与孤鹜齐飞，秋水共长天一色。' },
+      { id: 3, name: '英语3500核心词汇表', type: 'Word', category: '英语资料', uploadTime: '2026-08-03', content: '英语核心词汇（高频 100 词节选）\n\nabandon   v. 放弃\nability   n. 能力\nabsent    adj. 缺席的\nabsorb    v. 吸收\nacademic  adj. 学术的\naccept    v. 接受\naccess    n. 通道；v. 访问\nachieve   v. 实现，达到\nacquire   v. 获得\nadapt     v. 适应\n\n（完整 3500 词请到管理后台补充文件链接）' },
+      { id: 4, name: '数学函数与导数专题训练', type: 'Word', category: '数学资料', uploadTime: '2026-08-04', content: '数学函数与导数专题（核心公式）\n\n【函数基础】\n- 奇函数：f(-x) = -f(x)\n- 偶函数：f(-x) = f(x)\n- 定义域、值域、单调性、奇偶性\n\n【导数公式】\n- (xⁿ)′ = n·xⁿ⁻¹\n- (sin x)′ = cos x\n- (cos x)′ = -sin x\n- (eˣ)′ = eˣ\n- (ln x)′ = 1/x\n\n【求导法则】\n- [f(x)±g(x)]′ = f′(x) ± g′(x)\n- [f(x)·g(x)]′ = f′(x)g(x) + f(x)g′(x)\n- [f(x)/g(x)]′ = [f′(x)g(x) − f(x)g′(x)] / [g(x)]²' },
     ]);
   },
 
@@ -786,7 +786,7 @@ const CLOUD_TABLES = {
   words:          { table: 'words',           toRow: (it) => ({ id: it.id, word: it.word, meaning: it.meaning, phonetic: it.phonetic || '' }), fromRow: (r) => ({ id: r.id, word: r.word, meaning: r.meaning, phonetic: r.phonetic || '' }) },
   templates:      { table: 'templates',       toRow: (it) => ({ id: it.id, subject: it.subject, category: it.category, title: it.title, content: it.content }), fromRow: (r) => ({ id: r.id, subject: r.subject, category: r.category, title: r.title, content: r.content }) },
   scoreLines:     { table: 'score_lines',     toRow: (it) => ({ id: it.id, year: it.year, batch: it.batch, college: it.college, major: it.major, score: it.score, property: it.property, region: it.region }), fromRow: (r) => ({ id: r.id, year: r.year, batch: r.batch, college: r.college, major: r.major, score: r.score, property: r.property, region: r.region }) },
-  materials:      { table: 'materials',       toRow: (it) => ({ id: it.id, name: it.name, type: it.type, category: it.category, upload_time: it.uploadTime }), fromRow: (r) => ({ id: r.id, name: r.name, type: r.type, category: r.category, uploadTime: r.upload_time }) },
+  materials:      { table: 'materials',       toRow: (it) => ({ id: it.id, name: it.name, type: it.type, category: it.category, upload_time: it.uploadTime, content: it.content || '', file_url: it.url || '' }), fromRow: (r) => ({ id: r.id, name: r.name, type: r.type, category: r.category, uploadTime: r.upload_time, content: r.content || '', url: r.file_url || '' }) },
   essayMaterials: { table: 'essay_materials', toRow: (it) => ({ id: it.id, type: it.type, title: it.title, content: it.content, date: it.date }), fromRow: (r) => ({ id: r.id, type: r.type, title: r.title, content: r.content, date: r.date }) },
   policies:       { table: 'policies',        toRow: (it) => ({ id: it.id, title: it.title, content: it.content, date: it.date }), fromRow: (r) => ({ id: r.id, title: r.title, content: r.content, date: r.date }) },
   announcements:  { table: 'announcements',   toRow: (it) => ({ id: it.id, title: it.title, content: it.content, date: it.time }), fromRow: (r) => ({ title: r.title, content: r.content, time: r.date }) },
@@ -1548,14 +1548,32 @@ const App = {
           mats.map(m => `
             <div class="card" data-cat="${m.category}" data-name="${m.name}">
               <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-size:24px">${m.type==='PDF'?'📕':'📘'}</span>
+                <span style="font-size:24px">${m.type==='PDF'?'📕':m.type==='Word'?'📘':m.type==='图片'?'🖼️':'📄'}</span>
                 <div style="flex:1">
                   <div style="font-size:14px;font-weight:500">${m.name}</div>
                   <div style="font-size:12px;color:var(--text-secondary)">${m.category} · ${m.type} · ${m.uploadTime}</div>
                 </div>
-                <button class="btn btn-sm btn-primary" onclick="App.toast('模拟下载：${m.name}')">下载</button>
+                ${(m.content || m.url) ? `<button class="btn btn-sm btn-outline" onclick="App.navigateTo('material-detail','资料详情',${m.id})">查看</button>` : ''}
+                <button class="btn btn-sm btn-primary" onclick="App.downloadMaterial(${m.id})">下载</button>
               </div>
             </div>`).join('')}
+        </div>
+      `;
+    },
+
+    // MATERIAL DETAIL (view text content)
+    'material-detail': function (id) {
+      const m = DB.get('materials').find(x => x.id === id);
+      if (!m) return '<div class="empty-state"><div class="empty-state-text">资料不存在</div></div>';
+      const content = m.content || '';
+      const url = m.url || '';
+      return `
+        <div class="card">
+          <div class="card-title">${m.name}</div>
+          <div class="card-subtitle">${m.category} · ${m.type} · ${m.uploadTime}</div>
+          ${url ? `<div style="margin:12px 0"><a class="btn btn-primary btn-block" href="${url}" target="_blank" rel="noopener">📥 打开下载链接</a></div>` : ''}
+          ${content ? `<div style="font-size:14px;line-height:1.9;white-space:pre-wrap;word-break:break-word">${this._esc(content)}</div>` : '<div class="empty-state-text" style="margin:12px 0">该资料暂无文本内容，可点击下方「下载文件」</div>'}
+          <button class="btn btn-outline btn-block" style="margin-top:14px" onclick="App.downloadMaterial(${m.id})">📥 下载文件</button>
         </div>
       `;
     },
@@ -2054,14 +2072,20 @@ const App = {
     'admin-material-add': function () {
       return `
         <div class="card">
-          <div class="form-group"><label class="form-label">资料名称</label><input class="form-input" id="amName"></div>
+          <div class="form-group"><label class="form-label">资料名称</label><input class="form-input" id="amName" placeholder="如：2024年数学真题详解"></div>
           <div class="form-group"><label class="form-label">文件类型</label>
-            <select class="form-select" id="amType"><option>PDF</option><option>Word</option><option>图片</option></select>
+            <select class="form-select" id="amType"><option>文本</option><option>PDF</option><option>Word</option><option>图片</option></select>
           </div>
           <div class="form-group"><label class="form-label">分类</label>
             <select class="form-select" id="amCat"><option>语文资料</option><option>数学资料</option><option>英语资料</option><option>真题套卷</option><option>模拟试卷</option><option>知识总结</option><option>其他</option></select>
           </div>
-          <button class="btn btn-primary btn-lg" onclick="App.adminAddMaterial()">上传</button>
+          <div class="form-group"><label class="form-label">正文内容（可选，学生可在线阅读并可下载为文件）</label>
+            <textarea class="form-textarea" id="amContent" rows="8" placeholder="粘贴资料正文内容，如知识点总结、作文模板、解题技巧等。留空则仅显示名称。"></textarea>
+          </div>
+          <div class="form-group"><label class="form-label">文件链接（可选，填外部下载地址）</label>
+            <input class="form-input" id="amUrl" placeholder="https://...（如 PDF 文件的网盘/对象存储链接）">
+          </div>
+          <button class="btn btn-primary btn-lg" onclick="App.adminAddMaterial()">保存</button>
         </div>
       `;
     },
@@ -2074,6 +2098,12 @@ const App = {
           <div class="form-group"><label class="form-label">资料名称</label><input class="form-input" id="amNameE" value="${m.name}"></div>
           <div class="form-group"><label class="form-label">分类</label>
             <select class="form-select" id="amCatE">${['语文资料','数学资料','英语资料','真题套卷','模拟试卷','知识总结','其他'].map(c => `<option ${c===m.category?'selected':''}>${c}</option>`).join('')}</select>
+          </div>
+          <div class="form-group"><label class="form-label">正文内容（可选）</label>
+            <textarea class="form-textarea" id="amContentE" rows="8" placeholder="粘贴资料正文内容">${this._esc(m.content || '')}</textarea>
+          </div>
+          <div class="form-group"><label class="form-label">文件链接（可选）</label>
+            <input class="form-input" id="amUrlE" value="${this._esc(m.url || '')}" placeholder="https://...">
           </div>
           <button class="btn btn-primary btn-lg" onclick="App.adminEditMaterial(${m.id})">保存</button>
         </div>
@@ -2885,25 +2915,54 @@ const App = {
     reader.readAsArrayBuffer(file);
   },
 
+  _esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  },
+
+  downloadMaterial(id) {
+    const m = DB.get('materials').find(x => x.id === id);
+    if (!m) { App.toast('资料不存在'); return; }
+    // 有外部链接 → 打开链接
+    if (m.url) { window.open(m.url, '_blank'); return; }
+    // 有文本内容 → 生成真实文件下载
+    if (m.content) {
+      const ext = m.type === 'Word' ? '.doc' : (m.type === 'PDF' ? '.txt' : '.txt');
+      const filename = (m.name || '资料') + '.txt';
+      const blob = new Blob(['\uFEFF' + m.content], { type: 'text/plain;charset=utf-8' });
+      const u = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = u; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(u), 1000);
+      App.toast('已开始下载：' + filename);
+      return;
+    }
+    App.toast('该资料暂无文件内容，请联系管理员补充');
+  },
+
   adminAddMaterial() {
     const name = document.getElementById('amName').value.trim();
     const type = document.getElementById('amType').value;
     const cat = document.getElementById('amCat').value;
+    const content = (document.getElementById('amContent') ? document.getElementById('amContent').value : '').trim();
+    const url = (document.getElementById('amUrl') ? document.getElementById('amUrl').value : '').trim();
     if (!name) { App.toast('请填写资料名称'); return; }
     const mats = DB.get('materials');
-    mats.push({ id: Date.now(), name, type, category: cat, uploadTime: new Date().toISOString().split('T')[0] });
+    mats.push({ id: Date.now(), name, type, category: cat, content, url, uploadTime: new Date().toISOString().split('T')[0] });
     DB.set('materials', mats);
-    App.toast('上传成功');
+    App.toast('保存成功');
     App.goBack();
   },
 
   adminEditMaterial(id) {
     const name = document.getElementById('amNameE').value.trim();
     const cat = document.getElementById('amCatE').value;
+    const content = (document.getElementById('amContentE') ? document.getElementById('amContentE').value : '').trim();
+    const url = (document.getElementById('amUrlE') ? document.getElementById('amUrlE').value : '').trim();
     if (!name) { App.toast('请填写资料名称'); return; }
     const mats = DB.get('materials');
     const idx = mats.findIndex(m => m.id === id);
-    if (idx >= 0) { mats[idx].name = name; mats[idx].category = cat; }
+    if (idx >= 0) { mats[idx].name = name; mats[idx].category = cat; mats[idx].content = content; mats[idx].url = url; }
     DB.set('materials', mats);
     App.toast('保存成功');
     App.goBack();

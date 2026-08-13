@@ -15,8 +15,10 @@ alter table public.essay_materials alter column id drop identity if exists;
 alter table public.policies        alter column id drop identity if exists;
 alter table public.announcements   alter column id drop identity if exists;
 
--- 2. materials 表补充上传时间列
+-- 2. materials 表补充上传时间列、正文内容列、文件链接列
 alter table public.materials add column if not exists upload_time text;
+alter table public.materials add column if not exists content text;
+alter table public.materials add column if not exists file_url text;
 
 -- ============================================================
 -- 3. 灌入数据
@@ -1026,11 +1028,61 @@ insert into public.score_lines (id, year, batch, college, major, score, property
 on conflict (id) do nothing;
 
 -- 学习资料 (4 条)
-insert into public.materials (id, name, type, category, upload_time) values
-  (1, '2024年广东学考数学真题', 'PDF', '真题套卷', '2026-08-01'),
-  (2, '语文古诗文默写重点汇编', 'PDF', '语文资料', '2026-08-02'),
-  (3, '英语3500核心词汇表', 'PDF', '英语资料', '2026-08-03'),
-  (4, '数学函数与导数专题训练', 'Word', '数学资料', '2026-08-04')
+insert into public.materials (id, name, type, category, upload_time, content, file_url) values
+  (1, '2024年广东学考数学真题', 'PDF', '真题套卷', '2026-08-01', '2024年广东学考数学真题（节选）
+
+一、选择题
+1. 函数 f(x)=2x+1 在 x=1 处的值为（ ）
+   A. 1   B. 2   C. 3   D. 4
+
+2. 下列函数中，是奇函数的是（ ）
+   A. y=x²   B. y=x³   C. y=cosx   D. y=|x|
+
+（完整版请到管理后台补充文件链接）', ''),
+  (2, '语文古诗文默写重点汇编', '文本', '语文资料', '2026-08-02', '语文古诗文默写重点汇编
+
+【必背篇目】
+1. 《劝学》（荀子）：青，取之于蓝，而青于蓝；冰，水为之，而寒于水。
+2. 《师说》（韩愈）：师者，所以传道受业解惑也。
+3. 《赤壁赋》（苏轼）：寄蜉蝣于天地，渺沧海之一粟。
+4. 《登高》（杜甫）：无边落木萧萧下，不尽长江滚滚来。
+5. 《静夜思》（李白）：床前明月光，疑是地上霜。
+
+【常考名句】
+- 不积跬步，无以至千里；不积小流，无以成江海。
+- 落霞与孤鹜齐飞，秋水共长天一色。', ''),
+  (3, '英语3500核心词汇表', 'Word', '英语资料', '2026-08-03', '英语核心词汇（高频 100 词节选）
+
+abandon   v. 放弃
+ability   n. 能力
+absent    adj. 缺席的
+absorb    v. 吸收
+academic  adj. 学术的
+accept    v. 接受
+access    n. 通道；v. 访问
+achieve   v. 实现，达到
+acquire   v. 获得
+adapt     v. 适应
+
+（完整 3500 词请到管理后台补充文件链接）', ''),
+  (4, '数学函数与导数专题训练', 'Word', '数学资料', '2026-08-04', '数学函数与导数专题（核心公式）
+
+【函数基础】
+- 奇函数：f(-x) = -f(x)
+- 偶函数：f(-x) = f(x)
+- 定义域、值域、单调性、奇偶性
+
+【导数公式】
+- (xⁿ)′ = n·xⁿ⁻¹
+- (sin x)′ = cos x
+- (cos x)′ = -sin x
+- (eˣ)′ = eˣ
+- (ln x)′ = 1/x
+
+【求导法则】
+- [f(x)±g(x)]′ = f′(x) ± g′(x)
+- [f(x)·g(x)]′ = f′(x)g(x) + f(x)g′(x)
+- [f(x)/g(x)]′ = [f′(x)g(x) − f(x)g′(x)] / [g(x)]²', '')
 on conflict (id) do nothing;
 
 -- 作文素材 (12 条)

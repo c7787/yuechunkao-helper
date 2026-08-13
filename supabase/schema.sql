@@ -87,7 +87,9 @@ create table if not exists public.materials (
   name text not null,
   type text,
   category text,
+  content text,
   file_url text,
+  upload_time text,
   created_at timestamptz default now()
 );
 

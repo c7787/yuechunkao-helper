@@ -97,7 +97,7 @@ const sRows = data.scoreLines.map((s) => [
 
 const mRows = data.materials.map((mm, i) => [
   sqlNum(mm.id != null ? mm.id : i + 1), sqlStr(mm.name), sqlStr(mm.type), sqlStr(mm.category),
-  sqlStr(mm.uploadTime || ''),
+  sqlStr(mm.uploadTime || ''), sqlStr(mm.content || ''), sqlStr(mm.url || ''),
 ]);
 
 const eRows = data.essayMaterials.map((e) => [
@@ -131,8 +131,10 @@ alter table public.essay_materials alter column id drop identity if exists;
 alter table public.policies        alter column id drop identity if exists;
 alter table public.announcements   alter column id drop identity if exists;
 
--- 2. materials 表补充上传时间列
+-- 2. materials 表补充上传时间列、正文内容列、文件链接列
 alter table public.materials add column if not exists upload_time text;
+alter table public.materials add column if not exists content text;
+alter table public.materials add column if not exists file_url text;
 
 -- ============================================================
 -- 3. 灌入数据
@@ -153,7 +155,7 @@ parts.push('-- 分数线 (' + data.scoreLines.length + ' 条)');
 parts.push(insert('score_lines', ['id', 'year', 'batch', 'college', 'major', 'score', 'property', 'region'], sRows));
 parts.push('');
 parts.push('-- 学习资料 (' + data.materials.length + ' 条)');
-parts.push(insert('materials', ['id', 'name', 'type', 'category', 'upload_time'], mRows));
+parts.push(insert('materials', ['id', 'name', 'type', 'category', 'upload_time', 'content', 'file_url'], mRows));
 parts.push('');
 parts.push('-- 作文素材 (' + data.essayMaterials.length + ' 条)');
 parts.push(insert('essay_materials', ['id', 'type', 'title', 'content', 'date'], eRows));
