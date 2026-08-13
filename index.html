@@ -333,6 +333,7 @@ const DB = {
       ],
       studyStats: {
         totalQuestions: 0, correctQuestions: 0, subjectStats: { 语文: { total: 0, correct: 0 }, 数学: { total: 0, correct: 0 }, 英语: { total: 0, correct: 0 } },
+        categoryStats: {},
         streak: 0, lastStudyDate: null, wordProgress: { learned: 0, total: 350 }, mockExams: [],
         studyTime: {},
       },
@@ -1183,6 +1184,11 @@ const App = {
           ${this._statCard('错题数', `${DB.get('errorBook').length}`, '#ef4444')}
           ${this._statCard('打卡', `${DB.get('studyStats').streak}天`, '#f59e0b')}
         </div>
+        <div class="card" style="cursor:pointer;border-left:4px solid var(--danger)" onclick="App.navigateTo('weak-points','薄弱知识点诊断')">
+          <div class="card-title">🎯 薄弱知识点诊断</div>
+          <div class="card-subtitle">智能定位薄弱环节，点击即可专项训练</div>
+          <div style="margin-top:6px;font-size:12px;color:var(--text-secondary)">› 查看我的薄弱知识点</div>
+        </div>
 
         <div class="section-title">🛠️ 实用工具</div>
         <div class="grid-2">
@@ -1773,11 +1779,63 @@ const App = {
             return `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>${s}</span><span>${ss.correct}/${ss.total} (${rate}%)</span></div><div class="chart-bar"><div class="chart-bar-fill" style="width:${rate}%;background:${rate>=70?'#10b981':rate>=50?'#f59e0b':'#ef4444'}"></div></div></div>`;
           }).join('')}
         </div>
+        <div class="card" style="cursor:pointer;border-left:4px solid var(--danger)" onclick="App.navigateTo('weak-points','薄弱知识点诊断')">
+          <div class="card-title">🎯 薄弱知识点诊断</div>
+          <div class="card-subtitle">按正确率排序定位薄弱环节，点击知识点即可专项训练</div>
+        </div>
         <div class="card">
           <div class="card-title">📚 单词学习进度</div>
           <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>已学</span><span>${stats.wordProgress.learned}/${stats.wordProgress.total}</span></div>
           <div class="chart-bar" style="height:10px"><div class="chart-bar-fill" style="width:${Math.round(stats.wordProgress.learned/stats.wordProgress.total*100)}%;background:var(--primary)"></div></div>
         </div>
+      `;
+    },
+
+    // WEAK POINTS DIAGNOSIS
+    'weak-points': function () {
+      const stats = DB.get('studyStats');
+      const cs = stats.categoryStats || {};
+      const errorBook = DB.get('errorBook') || [];
+      // 错题本中每个知识点的未订正题数
+      const errByCat = {};
+      errorBook.forEach(id => {
+        const q = DB.get('questions').find(x => x.id === id);
+        if (q) { const c = q.category || '其他'; errByCat[c] = (errByCat[c] || 0) + 1; }
+      });
+      let items = Object.entries(cs).map(([cat, s]) => ({
+        cat, subject: s.subject || '', total: s.total || 0, correct: s.correct || 0,
+        wrong: (s.total || 0) - (s.correct || 0),
+        accuracy: s.total ? Math.round(s.correct / s.total * 100) : 0,
+        inError: errByCat[cat] || 0,
+      }));
+      items = items.filter(it => it.total > 0);
+      items.sort((a, b) => a.accuracy - b.accuracy || b.wrong - a.wrong || b.total - a.total);
+      if (!items.length) {
+        return `<div class="empty-state"><div class="empty-state-icon">🎯</div><div class="empty-state-text">暂无做题数据，先去刷题或做一套模考吧</div><div class="empty-state-sub"><button class="btn btn-primary btn-sm" onclick="App.navigateTo('exam-paper-setup','套卷模考')">去做一套模考</button></div></div>`;
+      }
+      return `
+        <div class="card"><div class="card-title">🎯 薄弱知识点诊断</div><div class="card-subtitle">按正确率排序，越靠前越薄弱，点击卡片立即专项训练</div></div>
+        ${items.map((it, i) => {
+          const color = it.accuracy >= 80 ? 'var(--success)' : it.accuracy >= 60 ? '#f59e0b' : 'var(--danger)';
+          const rankBg = i === 0 ? 'var(--danger)' : i < 3 ? '#f59e0b' : 'var(--bg2)';
+          const rankColor = i < 3 ? '#fff' : 'var(--text)';
+          return `
+          <div class="card" style="cursor:pointer" onclick="App.trainWeakPoint('${it.subject}','${it.cat}')">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:34px;height:34px;border-radius:50%;background:${rankBg};color:${rankColor};display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">${i+1}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500">${it.cat} <span class="tag tag-blue">${it.subject}</span>${it.inError ? ` <span class="tag tag-red">错题本${it.inError}题</span>` : ''}</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">共 ${it.total} 题 · 错 ${it.wrong} 题 · 正确率 ${it.accuracy}%</div>
+              </div>
+              <div style="width:60px;text-align:center;flex-shrink:0">
+                <div style="font-size:20px;font-weight:700;color:${color}">${it.accuracy}%</div>
+                <div style="font-size:10px;color:var(--text-secondary)">正确率</div>
+              </div>
+            </div>
+            <div class="progress-bar" style="margin-top:8px"><div class="progress-fill" style="width:${it.accuracy}%;background:${color}"></div></div>
+          </div>`;
+        }).join('')}
+        <div class="card" style="background:var(--primary-light);border:none"><div class="card-subtitle">💡 建议优先攻克正确率最低的知识点，点击卡片即可开始该知识点的全部题目专项训练。</div></div>
       `;
     },
 
@@ -2537,6 +2595,19 @@ const App = {
       <div class="list-item-arrow">›</div></div>`;
   },
 
+  // 记录某个知识点（category）的做题统计到 studyStats.categoryStats
+  _recordCategory(stats, q, isCorrect) {
+    if (!stats.categoryStats) stats.categoryStats = {};
+    const cat = q.category || '其他';
+    if (!stats.categoryStats[cat]) stats.categoryStats[cat] = { subject: q.subject, total: 0, correct: 0 };
+    stats.categoryStats[cat].total++;
+    if (isCorrect) stats.categoryStats[cat].correct++;
+  },
+
+  trainWeakPoint(subject, category) {
+    App.startQuiz('special', subject, category);
+  },
+
   _planPhase(title, content, color) {
     return `<div class="plan-phase" style="border-left-color:${color}">
       <div class="plan-phase-title" style="color:${color}">${title}</div>
@@ -2603,7 +2674,9 @@ const App = {
     App.quizQuestions.forEach(q => {
       if (!stats.subjectStats[q.subject]) stats.subjectStats[q.subject] = { total: 0, correct: 0 };
       stats.subjectStats[q.subject].total++;
-      if (App.quizAnswers[q.id] === q.answer) stats.subjectStats[q.subject].correct++;
+      const isC = App.quizAnswers[q.id] === q.answer;
+      if (isC) stats.subjectStats[q.subject].correct++;
+      App._recordCategory(stats, q, isC);
     });
     DB.set('studyStats', stats);
     App.navigateTo('quiz-result', '答题结果');
@@ -2800,6 +2873,9 @@ const App = {
     const stats = DB.get('studyStats');
     stats.totalQuestions += total;
     stats.correctQuestions += correct;
+    App.paper.questions.forEach(q => {
+      App._recordCategory(stats, q, App.paperAnswers[q.id] === q.answer);
+    });
     DB.set('studyStats', stats);
     App.paperResult = { ...record, questions: App.paper.questions, answers: App.paperAnswers };
     App.paper = null;
