@@ -350,6 +350,7 @@ const DB = {
   set(k, v) {
     localStorage.setItem('yck_' + k, JSON.stringify(v));
     if (cloudSyncReady && CLOUD_TABLES[k]) CloudSync.push(k);
+    if (cloudSyncReady && PERSONAL_KEYS.includes(k)) PersonalSync.push(k);
   },
 
   _initQuestions() {
@@ -743,6 +744,44 @@ const CloudSync = {
   },
 };
 
+// ===== 个人数据云端同步（user_data 通用 JSON 表）=====
+const PERSONAL_KEYS = ['studyPlan', 'errorBook', 'favorites', 'studyStats'];
+
+const PersonalSync = {
+  _queue: Promise.resolve(),
+  _enqueue(fn) {
+    this._queue = this._queue.then(fn).catch((e) => console.warn('个人数据同步失败', e));
+    return this._queue;
+  },
+
+  // 登录后拉取当前用户的个人数据（云端覆盖本地）
+  async pullAll() {
+    if (!sb || !App._currentUser) return;
+    const uid = App._currentUser.id;
+    try {
+      const { data, error } = await sb.from('user_data').select('key,data').eq('user_id', uid);
+      if (error || !data) return;
+      for (const row of data) {
+        if (PERSONAL_KEYS.includes(row.key)) DB.set(row.key, row.data);
+      }
+    } catch (e) { /* 拉取失败保持本地数据 */ }
+  },
+
+  // 写入某个人数据 key（按 user_id + key 覆盖）
+  push(key) {
+    if (!sb || !cloudSyncReady || !App._currentUser) return Promise.resolve();
+    if (!PERSONAL_KEYS.includes(key)) return Promise.resolve();
+    const uid = App._currentUser.id;
+    const val = DB.get(key);
+    return this._enqueue(async () => {
+      await sb.from('user_data').upsert(
+        { user_id: uid, key, data: val, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id,key' }
+      );
+    });
+  },
+};
+
 DB.init();
 
 // ===== APP STATE =====
@@ -778,6 +817,10 @@ const App = {
       } catch (e) { this._currentUser = null; }
       // 拉取云端公共数据（非空则覆盖本地，实现数据上云）
       try { await CloudSync.pullAll(); } catch (e) {}
+      // 已登录则拉取个人数据（学习计划/错题/收藏/统计）
+      if (this._currentUser) {
+        try { await PersonalSync.pullAll(); } catch (e) {}
+      }
     }
     cloudSyncReady = true;
     this.renderPage('home');
@@ -908,6 +951,7 @@ const App = {
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if (error) { this.toast('邮箱或密码错误'); return; }
     this._currentUser = data.user;
+    try { await PersonalSync.pullAll(); } catch (e) {}
     this.toast('登录成功，欢迎 ' + this.currentNickname());
     this.switchTab('home');
   },
@@ -933,6 +977,7 @@ const App = {
       try {
         await sb.from('profiles').insert({ id: data.user.id, username: email, nickname });
       } catch (e) { /* profiles 表可能未建，忽略 */ }
+      try { await PersonalSync.pullAll(); } catch (e) {}
     }
     if (data.session) {
       this.toast('注册成功，欢迎 ' + nickname);
