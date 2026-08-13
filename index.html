@@ -951,6 +951,9 @@ const App = {
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if (error) { this.toast('邮箱或密码错误'); return; }
     this._currentUser = data.user;
+    // 记住账号：勾选则本地保存邮箱密码，下次自动填好
+    const rememberEl = document.getElementById('lg-remember');
+    DB.set('rememberLogin', (rememberEl && rememberEl.checked) ? { email, password, remember: true } : { remember: false });
     try { await PersonalSync.pullAll(); } catch (e) {}
     this.toast('登录成功，欢迎 ' + this.currentNickname());
     this.switchTab('home');
@@ -978,6 +981,8 @@ const App = {
         await sb.from('profiles').insert({ id: data.user.id, username: email, nickname });
       } catch (e) { /* profiles 表可能未建，忽略 */ }
       try { await PersonalSync.pullAll(); } catch (e) {}
+      // 新注册自动记住账号，下次免输入
+      DB.set('rememberLogin', { email, password, remember: true });
     }
     if (data.session) {
       this.toast('注册成功，欢迎 ' + nickname);
@@ -1094,6 +1099,8 @@ const App = {
 
     // AUTH LOGIN
     'auth-login': function () {
+      const saved = DB.get('rememberLogin') || {};
+      const escV = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       return `
         <div class="login-container">
           <div class="login-logo">👤</div>
@@ -1101,10 +1108,14 @@ const App = {
           <div class="login-subtitle">登录后解锁完整备考功能</div>
           <div class="card" style="width:100%">
             <div class="form-group"><label class="form-label">邮箱</label>
-              <input class="form-input" id="lg-username" type="email" placeholder="请输入邮箱">
+              <input class="form-input" id="lg-username" type="email" placeholder="请输入邮箱" value="${escV(saved.email)}">
             </div>
             <div class="form-group"><label class="form-label">密码</label>
-              <input class="form-input" id="lg-password" type="password" placeholder="请输入密码">
+              <input class="form-input" id="lg-password" type="password" placeholder="请输入密码" value="${escV(saved.password)}">
+            </div>
+            <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:-2px">
+              <input type="checkbox" id="lg-remember" style="width:auto;accent-color:var(--primary)" ${saved.remember !== false ? 'checked' : ''}>
+              <label for="lg-remember" style="margin:0;font-size:14px;color:var(--text-secondary);cursor:pointer">记住账号，下次免输入</label>
             </div>
             <button class="btn btn-primary btn-lg" onclick="App.login()">登录</button>
           </div>
