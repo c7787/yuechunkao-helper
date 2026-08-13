@@ -2000,6 +2000,7 @@ const App = {
         <div class="card"><div class="card-title">📊 管理后台</div><div class="card-subtitle">欢迎回来，管理员</div></div>
         <div class="admin-menu">
           ${[
+            {icon:'📥',title:'导入习题',page:'admin-import-questions'},
             {icon:'⚡',title:'批量导入',page:'admin-batch'},
             {icon:'📂',title:'资料管理',page:'admin-materials'},
             {icon:'📝',title:'题库管理',page:'admin-questions'},
@@ -2025,7 +2026,7 @@ const App = {
         <div class="card">
           <div class="form-group"><label class="form-label">导入类型</label>
             <select class="form-select" id="batchType" onchange="App.renderBatchHint()">
-              <option value="questions">题目（JSON 格式）</option>
+              <option value="questions">题目（表格或JSON）</option>
               <option value="words">单词（每行一个）</option>
               <option value="materials">资料（每行一个）</option>
               <option value="scoreLines">分数线（每行一个）</option>
@@ -2051,6 +2052,39 @@ const App = {
           </div>
         </div>
         <div id="batchResult" style="margin-top:12px"></div>
+      `;
+    },
+
+    // ADMIN IMPORT QUESTIONS (专项导入习题)
+    'admin-import-questions': function () {
+      return `
+        <div class="card"><div class="card-title">📥 导入习题</div><div class="card-subtitle">表格粘贴或上传文件，一键扩充题库并自动同步云端</div></div>
+        <div class="card">
+          <div class="form-group"><label class="form-label">上传文件 / 下载模板</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="file" id="iqFile" accept=".txt,.csv,.tsv,.md,.json,.xlsx,.xls" style="display:none" onchange="App.importQuestionsFilePicked()">
+              <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('iqFile').click()">📁 选择文件</button>
+              <button class="btn btn-outline" style="flex:1" onclick="App.downloadQuestionsTemplate()">⬇️ 下载模板</button>
+            </div>
+            <div id="iqFileName" style="font-size:12px;color:var(--text-secondary);margin-top:6px;line-height:1.5"></div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:6px;line-height:1.6">支持 .txt / .csv / .tsv / .md（UTF-8 / GBK 自动识别）和 .xlsx 表格。可点「下载模板」拿到标准格式，在 Excel 里填好后上传。</div>
+          </div>
+          <div class="form-group"><label class="form-label">格式说明</label>
+            <div style="font-size:12px;color:var(--text-secondary);background:var(--bg2);padding:10px;border-radius:8px;line-height:1.9">
+              每行一道题，用 <b>|</b> 或 <b>Tab</b> 分隔 10 列：<br>
+              科目 | 题型 | 分类 | 题干 | 选项A | 选项B | 选项C | 选项D | 答案 | 解析<br>
+              答案填 <b>A/B/C/D</b> 或 <b>1/2/3/4</b>；也支持 JSON 数组（以 [ 开头）。
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">粘贴内容</label>
+            <textarea class="form-textarea" id="iqContent" rows="12" placeholder="每行一题，示例：&#10;数学|单选|函数|f(x)=x+1在x=2处的值是？|A.1|B.2|C.3|D.4|C|f(2)=2+1=3"></textarea>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" style="flex:1" onclick="App.fillQuestionsExample()">填入示例</button>
+            <button class="btn btn-primary" style="flex:1" onclick="App.importQuestionsPage()">开始导入</button>
+          </div>
+        </div>
+        <div id="iqResult" style="margin-top:12px"></div>
       `;
     },
 
@@ -2737,8 +2771,8 @@ const App = {
   // ===== 批量导入 =====
   _batchMeta: {
     questions: {
-      hint: 'JSON 数组格式，每道题一个对象。字段：subject(科目 语文/数学/英语)、type(题型)、category(分类)、stem(题干)、options(选项数组4个)、answer(正确答案序号 0=A,1=B,2=C,3=D)、analysis(解析)。',
-      example: '[\n  {"subject":"数学","type":"单选","category":"函数","stem":"函数 f(x)=x+1 在 x=2 处的值是？","options":["A. 1","B. 2","C. 3","D. 4"],"answer":2,"analysis":"f(2)=2+1=3。"}\n]'
+      hint: '两种格式均可：① 表格（推荐）：每行一题，用 | 或 Tab 分隔 10 列——科目|题型|分类|题干|选项A|选项B|选项C|选项D|答案|解析，答案填 A/B/C/D 或 1/2/3/4；② JSON 数组：字段 subject/type/category/stem/options/answer/analysis。',
+      example: '数学|单选|函数|函数 f(x)=x+1 在 x=2 处的值是？|A.1|B.2|C.3|D.4|C|f(2)=2+1=3\n语文|单选|古诗文|下列哪句出自《劝学》？|A.落霞与孤鹜齐飞|B.青出于蓝而胜于蓝|C.无边落木萧萧下|D.床前明月光|B|"青，取之于蓝"出自荀子《劝学》'
     },
     words: {
       hint: '每行一个单词，格式：单词,释义（可选第三列为音标）。中英文逗号均可。',
@@ -2773,19 +2807,13 @@ const App = {
     const errors = [];
 
     if (type === 'questions') {
-      let arr;
-      try { arr = JSON.parse(content); } catch (e) { App.toast('JSON 格式错误，请检查括号和引号'); return; }
-      if (!Array.isArray(arr)) { App.toast('请粘贴 JSON 数组（以 [ 开头 ] 结尾）'); return; }
+      const r = this._parseQuestions(content);
+      if (r.fatal) { App.toast(r.fatal); return; }
       const qs = DB.get('questions');
-      arr.forEach((q, i) => {
-        if (!q || !q.subject || !q.stem || !Array.isArray(q.options) || q.options.length < 2 || q.answer == null) {
-          errors.push('第 ' + (i + 1) + ' 条题目缺少必要字段（subject/stem/options/answer）');
-          return;
-        }
-        qs.push({ id: Date.now() + i, subject: String(q.subject), type: q.type || '单选', category: q.category || '', stem: String(q.stem), options: q.options.map(String), answer: parseInt(q.answer), analysis: q.analysis || '' });
-        count++;
-      });
+      r.list.forEach(q => qs.push(q));
       DB.set('questions', qs);
+      count += r.count;
+      errors.push(...r.errors);
     } else if (type === 'words') {
       const ws = DB.get('words');
       content.split('\n').forEach((line, i) => {
@@ -2829,6 +2857,117 @@ const App = {
       resultEl.innerHTML = '<div class="card"><div class="card-title" style="color:var(--success,#16a34a)">✅ 全部导入成功，共 ' + count + ' 条</div></div>';
     }
     if (errors.length === 0) { document.getElementById('batchContent').value = ''; }
+  },
+
+  // 解析题目：支持表格（| / Tab / 逗号）与 JSON 数组两种格式，返回 { fatal, count, errors, list }
+  _parseQuestions(text) {
+    const errors = [];
+    const list = [];
+    const trimmed = String(text || '').trim();
+    if (!trimmed) return { fatal: '请先粘贴或上传题目内容', count: 0, errors, list };
+
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      let arr;
+      try { arr = JSON.parse(trimmed); } catch (e) { return { fatal: 'JSON 格式错误，请检查括号和引号', count: 0, errors, list }; }
+      if (!Array.isArray(arr)) return { fatal: '请粘贴 JSON 数组（以 [ 开头 ] 结尾）', count: 0, errors, list };
+      arr.forEach((q, i) => {
+        if (!q || !q.subject || !q.stem || !Array.isArray(q.options) || q.options.length < 2 || q.answer == null) {
+          errors.push('第 ' + (i + 1) + ' 条题目缺少必要字段（subject/stem/options/answer）'); return;
+        }
+        list.push({ id: Date.now() + i, subject: String(q.subject), type: q.type || '单选', category: q.category || '', stem: String(q.stem), options: q.options.map(String), answer: parseInt(q.answer), analysis: q.analysis || '' });
+      });
+      return { fatal: null, count: list.length, errors, list };
+    }
+
+    trimmed.split('\n').map(l => l.trim()).filter(l => l).forEach((line, i) => {
+      if (/^(科目|题型|subject|type|题目)/i.test(line)) return; // 跳过表头
+      const parts = this._splitQuestionLine(line);
+      if (parts.length < 8) { errors.push('第 ' + (i + 1) + ' 行列数不足（需 科目|题型|分类|题干|选项A|选项B|选项C|选项D|答案|解析）'); return; }
+      const subject = (parts[0] || '').trim();
+      const type = (parts[1] || '').trim() || '单选';
+      const category = (parts[2] || '').trim();
+      const stem = (parts[3] || '').trim();
+      const opts = [parts[4], parts[5], parts[6], parts[7]].map(s => (s || '').trim()).filter(s => s);
+      const answerRaw = (parts[8] || '').trim();
+      const analysis = (parts[9] || '').trim();
+      if (!subject || !stem || opts.length < 2 || !answerRaw) { errors.push('第 ' + (i + 1) + ' 行缺少科目/题干/选项/答案'); return; }
+      const ans = this._parseAnswerIndex(answerRaw, opts.length);
+      if (ans == null) { errors.push('第 ' + (i + 1) + ' 行答案无法识别（应为 A/B/C/D 或 1/2/3/4）'); return; }
+      list.push({ id: Date.now() + i, subject, type, category, stem, options: opts, answer: ans, analysis });
+    });
+    return { fatal: null, count: list.length, errors, list };
+  },
+
+  _splitQuestionLine(line) {
+    if (line.indexOf('\t') !== -1) return line.split('\t');
+    if (line.indexOf('|') !== -1) return line.split('|');
+    return line.split(/[,，]/);
+  },
+
+  _parseAnswerIndex(raw, optCount) {
+    const s = String(raw).trim().toUpperCase();
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    const li = letters.indexOf(s);
+    if (li >= 0 && li < optCount) return li;
+    const n = parseInt(s, 10);
+    if (!isNaN(n) && n >= 1 && n <= optCount) return n - 1;
+    return null;
+  },
+
+  fillQuestionsExample() {
+    document.getElementById('iqContent').value = this._batchMeta.questions.example;
+  },
+
+  importQuestionsPage() {
+    const content = document.getElementById('iqContent').value.trim();
+    const resultEl = document.getElementById('iqResult');
+    const r = this._parseQuestions(content);
+    if (r.fatal) { App.toast(r.fatal); return; }
+    if (r.count === 0 && r.errors.length === 0) { App.toast('没有可导入的内容'); return; }
+    const qs = DB.get('questions');
+    r.list.forEach(q => qs.push(q));
+    DB.set('questions', qs);
+    App.toast('成功导入 ' + r.count + ' 道题' + (r.errors.length ? '，' + r.errors.length + ' 条失败' : ''));
+    if (r.errors.length) {
+      resultEl.innerHTML = '<div class="card"><div class="card-title" style="color:var(--danger)">⚠️ ' + r.errors.length + ' 条导入失败</div>' + r.errors.map(e => '<div style="font-size:13px;color:var(--danger);line-height:1.6">• ' + e + '</div>').join('') + '</div>';
+    } else {
+      resultEl.innerHTML = '<div class="card"><div class="card-title" style="color:var(--success,#16a34a)">✅ 全部导入成功，共 ' + r.count + ' 道题</div></div>';
+    }
+    if (!r.errors.length) document.getElementById('iqContent').value = '';
+  },
+
+  importQuestionsFilePicked() {
+    const input = document.getElementById('iqFile');
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const name = file.name || '';
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    const nameEl = document.getElementById('iqFileName');
+    const ta = document.getElementById('iqContent');
+    if (ext === 'xlsx' || ext === 'xls') { this._parseExcelFile(file, nameEl, ta); return; }
+    nameEl.textContent = '正在读取 ' + name + ' ...';
+    this._readFileText(file, (text) => {
+      ta.value = text;
+      nameEl.textContent = '已读取 ' + name + '（约 ' + text.split('\n').length + ' 行），可编辑后点「开始导入」';
+      App.toast('文件读取成功，请确认后开始导入');
+    });
+  },
+
+  downloadQuestionsTemplate() {
+    const header = '科目|题型|分类|题干|选项A|选项B|选项C|选项D|答案|解析';
+    const rows = [
+      '数学|单选|函数|函数 f(x)=x+1 在 x=2 处的值是？|A.1|B.2|C.3|D.4|C|f(2)=2+1=3',
+      '语文|单选|古诗文|下列哪句出自《劝学》？|A.落霞与孤鹜齐飞|B.青出于蓝而胜于蓝|C.无边落木萧萧下|D.床前明月光|B|青，取之于蓝，而青于蓝。',
+      '英语|单选|词汇|abandon 的中文意思是？|A.接受|B.放弃|C.获得|D.适应|B|abandon 意为放弃。',
+    ].join('\n');
+    const text = header + '\n' + rows;
+    const blob = new Blob(['\uFEFF' + text], { type: 'text/csv;charset=utf-8' });
+    const u = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = u; a.download = '习题导入模板.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 1000);
+    App.toast('模板已下载');
   },
 
   _XLSX_CDNS: [
