@@ -1982,6 +1982,7 @@ const App = {
         <div class="card"><div class="card-title">📊 管理后台</div><div class="card-subtitle">欢迎回来，管理员</div></div>
         <div class="admin-menu">
           ${[
+            {icon:'⚡',title:'批量导入',page:'admin-batch'},
             {icon:'📂',title:'资料管理',page:'admin-materials'},
             {icon:'📝',title:'题库管理',page:'admin-questions'},
             {icon:'📚',title:'单词管理',page:'admin-words'},
@@ -1995,6 +1996,35 @@ const App = {
               <div class="admin-menu-item-title">${m.title}</div>
             </div>`).join('')}
         </div>
+      `;
+    },
+
+    // ADMIN BATCH IMPORT
+    'admin-batch': function () {
+      const meta = this._batchMeta;
+      return `
+        <div class="card"><div class="card-title">⚡ 批量导入</div><div class="card-subtitle">粘贴内容一次性导入多条数据，自动同步云端</div></div>
+        <div class="card">
+          <div class="form-group"><label class="form-label">导入类型</label>
+            <select class="form-select" id="batchType" onchange="App.renderBatchHint()">
+              <option value="questions">题目（JSON 格式）</option>
+              <option value="words">单词（每行一个）</option>
+              <option value="materials">资料（每行一个）</option>
+              <option value="scoreLines">分数线（每行一个）</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">格式说明</label>
+            <div id="batchHint" style="font-size:12px;color:var(--text-secondary);background:var(--bg2);padding:10px;border-radius:8px;line-height:1.7">${meta.questions.hint}</div>
+          </div>
+          <div class="form-group"><label class="form-label">粘贴内容</label>
+            <textarea class="form-textarea" id="batchContent" rows="11" placeholder="在此粘贴要导入的内容..."></textarea>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" style="flex:1" onclick="App.fillBatchExample()">填入示例</button>
+            <button class="btn btn-primary" style="flex:1" onclick="App.adminBatchImport()">开始导入</button>
+          </div>
+        </div>
+        <div id="batchResult" style="margin-top:12px"></div>
       `;
     },
 
@@ -2664,6 +2694,103 @@ const App = {
     } else {
       App.toast('用户名或密码错误');
     }
+  },
+
+  // ===== 批量导入 =====
+  _batchMeta: {
+    questions: {
+      hint: 'JSON 数组格式，每道题一个对象。字段：subject(科目 语文/数学/英语)、type(题型)、category(分类)、stem(题干)、options(选项数组4个)、answer(正确答案序号 0=A,1=B,2=C,3=D)、analysis(解析)。',
+      example: '[\n  {"subject":"数学","type":"单选","category":"函数","stem":"函数 f(x)=x+1 在 x=2 处的值是？","options":["A. 1","B. 2","C. 3","D. 4"],"answer":2,"analysis":"f(2)=2+1=3。"}\n]'
+    },
+    words: {
+      hint: '每行一个单词，格式：单词,释义（可选第三列为音标）。中英文逗号均可。',
+      example: 'apple,苹果\nbanana,香蕉\nbeautiful,美丽的,/ˈbjuːtɪfl/'
+    },
+    materials: {
+      hint: '每行一份资料，格式：名称,类型,分类。类型如 PDF/Word/图片；分类如 真题套卷/语文资料/数学资料/英语资料。',
+      example: '2024年数学真题,PDF,真题套卷\n英语作文万能模板,Word,英语资料'
+    },
+    scoreLines: {
+      hint: '每行一条分数线，格式：年份,批次,院校,专业,分数,属性,地区。属性为 公办/民办；批次为 常规批/补录批。',
+      example: '2025,常规批,深圳职业技术大学,计算机应用技术,384,公办,全省\n2025,常规批,广州城建职业学院,建筑工程技术,255,民办,全省'
+    },
+  },
+
+  renderBatchHint() {
+    const type = document.getElementById('batchType').value;
+    document.getElementById('batchHint').textContent = this._batchMeta[type].hint;
+  },
+
+  fillBatchExample() {
+    const type = document.getElementById('batchType').value;
+    document.getElementById('batchContent').value = this._batchMeta[type].example;
+  },
+
+  adminBatchImport() {
+    const type = document.getElementById('batchType').value;
+    const content = document.getElementById('batchContent').value.trim();
+    const resultEl = document.getElementById('batchResult');
+    if (!content) { App.toast('请先粘贴要导入的内容'); return; }
+    let count = 0;
+    const errors = [];
+
+    if (type === 'questions') {
+      let arr;
+      try { arr = JSON.parse(content); } catch (e) { App.toast('JSON 格式错误，请检查括号和引号'); return; }
+      if (!Array.isArray(arr)) { App.toast('请粘贴 JSON 数组（以 [ 开头 ] 结尾）'); return; }
+      const qs = DB.get('questions');
+      arr.forEach((q, i) => {
+        if (!q || !q.subject || !q.stem || !Array.isArray(q.options) || q.options.length < 2 || q.answer == null) {
+          errors.push('第 ' + (i + 1) + ' 条题目缺少必要字段（subject/stem/options/answer）');
+          return;
+        }
+        qs.push({ id: Date.now() + i, subject: String(q.subject), type: q.type || '单选', category: q.category || '', stem: String(q.stem), options: q.options.map(String), answer: parseInt(q.answer), analysis: q.analysis || '' });
+        count++;
+      });
+      DB.set('questions', qs);
+    } else if (type === 'words') {
+      const ws = DB.get('words');
+      content.split('\n').forEach((line, i) => {
+        line = line.trim();
+        if (!line) return;
+        const parts = line.split(/[,，]/);
+        if (parts.length < 2 || !parts[0].trim() || !parts[1].trim()) { errors.push('第 ' + (i + 1) + ' 行格式错误（需 单词,释义）'); return; }
+        ws.push({ id: Date.now() + i, word: parts[0].trim(), meaning: parts[1].trim(), phonetic: (parts[2] || '').trim() });
+        count++;
+      });
+      DB.set('words', ws);
+    } else if (type === 'materials') {
+      const mats = DB.get('materials');
+      content.split('\n').forEach((line, i) => {
+        line = line.trim();
+        if (!line) return;
+        const parts = line.split(/[,，|]/);
+        if (parts.length < 3 || !parts[0].trim()) { errors.push('第 ' + (i + 1) + ' 行格式错误（需 名称,类型,分类）'); return; }
+        mats.push({ id: Date.now() + i, name: parts[0].trim(), type: parts[1].trim(), category: parts[2].trim(), uploadTime: new Date().toISOString().split('T')[0] });
+        count++;
+      });
+      DB.set('materials', mats);
+    } else if (type === 'scoreLines') {
+      const sls = DB.get('scoreLines');
+      content.split('\n').forEach((line, i) => {
+        line = line.trim();
+        if (!line) return;
+        const parts = line.split(/[,，|]/);
+        if (parts.length < 7 || !parts[0].trim() || !parts[2].trim()) { errors.push('第 ' + (i + 1) + ' 行格式错误（需 年份,批次,院校,专业,分数,属性,地区）'); return; }
+        sls.push({ id: Date.now() + i, year: parseInt(parts[0]), batch: parts[1].trim(), college: parts[2].trim(), major: parts[3].trim(), score: parseInt(parts[4]), property: parts[5].trim(), region: parts[6].trim() });
+        count++;
+      });
+      DB.set('scoreLines', sls);
+    }
+
+    if (count === 0 && errors.length === 0) { App.toast('没有可导入的内容'); return; }
+    App.toast('成功导入 ' + count + ' 条' + (errors.length ? '，' + errors.length + ' 条失败' : ''));
+    if (errors.length) {
+      resultEl.innerHTML = '<div class="card"><div class="card-title" style="color:var(--danger)">⚠️ ' + errors.length + ' 条导入失败</div>' + errors.map(e => '<div style="font-size:13px;color:var(--danger);line-height:1.6">• ' + e + '</div>').join('') + '</div>';
+    } else {
+      resultEl.innerHTML = '<div class="card"><div class="card-title" style="color:var(--success,#16a34a)">✅ 全部导入成功，共 ' + count + ' 条</div></div>';
+    }
+    if (errors.length === 0) { document.getElementById('batchContent').value = ''; }
   },
 
   adminAddMaterial() {
