@@ -14,6 +14,8 @@ alter table public.materials       alter column id drop identity if exists;
 alter table public.essay_materials alter column id drop identity if exists;
 alter table public.policies        alter column id drop identity if exists;
 alter table public.announcements   alter column id drop identity if exists;
+alter table public.colleges        alter column id drop identity if exists;
+alter table public.majors          alter column id drop identity if exists;
 
 -- 2. materials 表补充上传时间列、正文内容列、文件链接列
 alter table public.materials add column if not exists upload_time text;
@@ -1151,4 +1153,43 @@ on conflict (id) do nothing;
 insert into public.announcements (id, title, content, date) values
   (1, '2027年广东春考时间节点提醒', '语文、数学、英语学考预计于2027年1月初举行，请同学们合理安排复习时间。', '2026-08-01'),
   (2, '征集志愿补录通知', '2026年春考补录批次已于7月完成，请关注后续2027年补录时间节点。', '2026-07-15')
+on conflict (id) do nothing;
+
+-- 院校 (10 条)
+insert into public.colleges (id, name, property, tuition, location) values
+  (1, '深圳职业技术大学', '公办', '6000元/年', '深圳'),
+  (2, '广东轻工职业技术大学', '公办', '5500元/年', '广州'),
+  (3, '广州番禺职业技术学院', '公办', '5250元/年', '广州'),
+  (4, '顺德职业技术学院', '公办', '5250元/年', '佛山'),
+  (5, '广东机电职业技术学院', '公办', '5250元/年', '广州'),
+  (6, '揭阳职业技术学院', '公办', '4800元/年', '揭阳'),
+  (7, '广州城建职业学院', '民办', '18000元/年', '广州'),
+  (8, '广东岭南职业技术学院', '民办', '16500元/年', '广州'),
+  (9, '潮汕职业技术学院', '民办', '12800元/年', '揭阳'),
+  (10, '广州华商职业学院', '民办', '15800元/年', '广州')
+on conflict (id) do nothing;
+
+-- 专业 (21 条)
+insert into public.majors (id, college_name, name, plan, min_score, min_rank) values
+  (1, '深圳职业技术大学', '计算机应用技术', 120, 375, 12000),
+  (2, '深圳职业技术大学', '大数据与会计', 90, 368, 15000),
+  (3, '深圳职业技术大学', '电子商务', 100, 360, 18000),
+  (4, '广东轻工职业技术大学', '软件技术', 110, 350, 22000),
+  (5, '广东轻工职业技术大学', '食品检验检测技术', 80, 340, 26000),
+  (6, '广州番禺职业技术学院', '软件技术', 100, 345, 24000),
+  (7, '广州番禺职业技术学院', '电子商务', 90, 335, 28000),
+  (8, '顺德职业技术学院', '烹饪工艺与营养', 70, 330, 30000),
+  (9, '顺德职业技术学院', '工业机器人技术', 80, 338, 26500),
+  (10, '广东机电职业技术学院', '机电一体化技术', 100, 320, 34000),
+  (11, '广东机电职业技术学院', '新能源汽车技术', 90, 315, 36000),
+  (12, '揭阳职业技术学院', '学前教育', 80, 260, 55000),
+  (13, '揭阳职业技术学院', '护理', 100, 250, 60000),
+  (14, '广州城建职业学院', '建筑工程技术', 120, 255, 58000),
+  (15, '广州城建职业学院', '工程造价', 90, 240, 65000),
+  (16, '广东岭南职业技术学院', '护理', 110, 230, 70000),
+  (17, '广东岭南职业技术学院', '动漫制作技术', 80, 225, 72000),
+  (18, '潮汕职业技术学院', '电子商务', 100, 200, 85000),
+  (19, '潮汕职业技术学院', '市场营销', 80, 190, 90000),
+  (20, '广州华商职业学院', '会计', 100, 210, 82000),
+  (21, '广州华商职业学院', '计算机应用技术', 90, 220, 76000)
 on conflict (id) do nothing;

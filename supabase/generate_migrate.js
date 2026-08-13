@@ -46,7 +46,7 @@ vm.runInContext(code, sandbox);
 const DB = sandbox.__DB;
 
 // ---- 提取数据 ----
-const keys = ['questions', 'words', 'templates', 'scoreLines', 'materials', 'essayMaterials', 'policies', 'announcements'];
+const keys = ['questions', 'words', 'templates', 'scoreLines', 'materials', 'essayMaterials', 'policies', 'announcements', 'colleges', 'majors'];
 const data = {};
 for (const k of keys) data[k] = DB.get(k) || [];
 
@@ -59,6 +59,8 @@ console.log('提取统计:', JSON.stringify({
   essayMaterials: data.essayMaterials.length,
   policies: data.policies.length,
   announcements: data.announcements.length,
+  colleges: data.colleges.length,
+  majors: data.majors.length,
 }));
 
 // ---- SQL 生成辅助 ----
@@ -114,6 +116,16 @@ const aRows = data.announcements.map((a, i) => [
   sqlNum(i + 1), sqlStr(a.title), sqlStr(a.content), sqlStr(a.time),
 ]);
 
+// 院校
+const colRows = data.colleges.map((c, i) => [
+  sqlNum(c.id != null ? c.id : i + 1), sqlStr(c.name), sqlStr(c.property || ''), sqlStr(c.tuition || ''), sqlStr(c.location || ''),
+]);
+
+// 专业
+const majRows = data.majors.map((mm, i) => [
+  sqlNum(mm.id != null ? mm.id : i + 1), sqlStr(mm.collegeName), sqlStr(mm.name), sqlNum(mm.plan || 0), sqlNum(mm.minScore), sqlNum(mm.minRank),
+]);
+
 // ---- 组装 SQL ----
 const header = `-- ============================================================
 -- 粤春考助手 · 数据迁移脚本（一次性执行）
@@ -131,6 +143,8 @@ alter table public.materials       alter column id drop identity if exists;
 alter table public.essay_materials alter column id drop identity if exists;
 alter table public.policies        alter column id drop identity if exists;
 alter table public.announcements   alter column id drop identity if exists;
+alter table public.colleges        alter column id drop identity if exists;
+alter table public.majors          alter column id drop identity if exists;
 
 -- 2. materials 表补充上传时间列、正文内容列、文件链接列
 alter table public.materials add column if not exists upload_time text;
@@ -168,6 +182,12 @@ parts.push(insert('policies', ['id', 'title', 'content', 'date'], pRows));
 parts.push('');
 parts.push('-- 公告 (' + data.announcements.length + ' 条)');
 parts.push(insert('announcements', ['id', 'title', 'content', 'date'], aRows));
+parts.push('');
+parts.push('-- 院校 (' + data.colleges.length + ' 条)');
+parts.push(insert('colleges', ['id', 'name', 'property', 'tuition', 'location'], colRows));
+parts.push('');
+parts.push('-- 专业 (' + data.majors.length + ' 条)');
+parts.push(insert('majors', ['id', 'college_name', 'name', 'plan', 'min_score', 'min_rank'], majRows));
 parts.push('');
 
 fs.writeFileSync(OUT, header + parts.join('\n'), 'utf8');

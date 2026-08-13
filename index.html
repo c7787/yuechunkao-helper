@@ -311,13 +311,13 @@ let _aiEngineModel = null;
 const EXAM_TIME = new Date('2027-01-08T09:00:00+08:00');
 
 // ===== DATA STORE =====
-const DATA_VERSION = 5;
+const DATA_VERSION = 6;
 const DB = {
   init() {
     // 数据版本升级时，清除旧的种子数据，重新初始化
     const oldVersion = localStorage.getItem('yck_dataVersion');
     if (oldVersion !== String(DATA_VERSION)) {
-      ['questions', 'words', 'templates', 'scoreLines', 'materials', 'essayMaterials', 'policies'].forEach(k => localStorage.removeItem('yck_' + k));
+      ['questions', 'words', 'templates', 'scoreLines', 'materials', 'essayMaterials', 'policies', 'colleges', 'majors'].forEach(k => localStorage.removeItem('yck_' + k));
       localStorage.setItem('yck_dataVersion', String(DATA_VERSION));
     }
     const defaults = {
@@ -337,6 +337,9 @@ const DB = {
       posts: [],
       exam_records: [],
       essayDrafts: [],
+      colleges: [],
+      majors: [],
+      favColleges: [],
       announcements: [
         { title: '2027年广东春考时间节点提醒', content: '语文、数学、英语学考预计于2027年1月初举行，请同学们合理安排复习时间。', time: '2026-08-01' },
         { title: '征集志愿补录通知', content: '2026年春考补录批次已于7月完成，请关注后续2027年补录时间节点。', time: '2026-07-15' },
@@ -358,6 +361,8 @@ const DB = {
     this._initMaterials();
     this._initEssayMaterials();
     this._initPolicies();
+    this._initColleges();
+    this._initMajors();
   },
   get(k) { return JSON.parse(localStorage.getItem('yck_' + k) || 'null'); },
   set(k, v) {
@@ -774,6 +779,49 @@ const DB = {
     ]);
   },
 
+  _initColleges() {
+    if (this.get('colleges')?.length) return;
+    this.set('colleges', [
+      { id: 1, name: '深圳职业技术大学', property: '公办', tuition: '6000元/年', location: '深圳' },
+      { id: 2, name: '广东轻工职业技术大学', property: '公办', tuition: '5500元/年', location: '广州' },
+      { id: 3, name: '广州番禺职业技术学院', property: '公办', tuition: '5250元/年', location: '广州' },
+      { id: 4, name: '顺德职业技术学院', property: '公办', tuition: '5250元/年', location: '佛山' },
+      { id: 5, name: '广东机电职业技术学院', property: '公办', tuition: '5250元/年', location: '广州' },
+      { id: 6, name: '揭阳职业技术学院', property: '公办', tuition: '4800元/年', location: '揭阳' },
+      { id: 7, name: '广州城建职业学院', property: '民办', tuition: '18000元/年', location: '广州' },
+      { id: 8, name: '广东岭南职业技术学院', property: '民办', tuition: '16500元/年', location: '广州' },
+      { id: 9, name: '潮汕职业技术学院', property: '民办', tuition: '12800元/年', location: '揭阳' },
+      { id: 10, name: '广州华商职业学院', property: '民办', tuition: '15800元/年', location: '广州' },
+    ]);
+  },
+
+  _initMajors() {
+    if (this.get('majors')?.length) return;
+    this.set('majors', [
+      { id: 1, collegeName: '深圳职业技术大学', name: '计算机应用技术', plan: 120, minScore: 375, minRank: 12000 },
+      { id: 2, collegeName: '深圳职业技术大学', name: '大数据与会计', plan: 90, minScore: 368, minRank: 15000 },
+      { id: 3, collegeName: '深圳职业技术大学', name: '电子商务', plan: 100, minScore: 360, minRank: 18000 },
+      { id: 4, collegeName: '广东轻工职业技术大学', name: '软件技术', plan: 110, minScore: 350, minRank: 22000 },
+      { id: 5, collegeName: '广东轻工职业技术大学', name: '食品检验检测技术', plan: 80, minScore: 340, minRank: 26000 },
+      { id: 6, collegeName: '广州番禺职业技术学院', name: '软件技术', plan: 100, minScore: 345, minRank: 24000 },
+      { id: 7, collegeName: '广州番禺职业技术学院', name: '电子商务', plan: 90, minScore: 335, minRank: 28000 },
+      { id: 8, collegeName: '顺德职业技术学院', name: '烹饪工艺与营养', plan: 70, minScore: 330, minRank: 30000 },
+      { id: 9, collegeName: '顺德职业技术学院', name: '工业机器人技术', plan: 80, minScore: 338, minRank: 26500 },
+      { id: 10, collegeName: '广东机电职业技术学院', name: '机电一体化技术', plan: 100, minScore: 320, minRank: 34000 },
+      { id: 11, collegeName: '广东机电职业技术学院', name: '新能源汽车技术', plan: 90, minScore: 315, minRank: 36000 },
+      { id: 12, collegeName: '揭阳职业技术学院', name: '学前教育', plan: 80, minScore: 260, minRank: 55000 },
+      { id: 13, collegeName: '揭阳职业技术学院', name: '护理', plan: 100, minScore: 250, minRank: 60000 },
+      { id: 14, collegeName: '广州城建职业学院', name: '建筑工程技术', plan: 120, minScore: 255, minRank: 58000 },
+      { id: 15, collegeName: '广州城建职业学院', name: '工程造价', plan: 90, minScore: 240, minRank: 65000 },
+      { id: 16, collegeName: '广东岭南职业技术学院', name: '护理', plan: 110, minScore: 230, minRank: 70000 },
+      { id: 17, collegeName: '广东岭南职业技术学院', name: '动漫制作技术', plan: 80, minScore: 225, minRank: 72000 },
+      { id: 18, collegeName: '潮汕职业技术学院', name: '电子商务', plan: 100, minScore: 200, minRank: 85000 },
+      { id: 19, collegeName: '潮汕职业技术学院', name: '市场营销', plan: 80, minScore: 190, minRank: 90000 },
+      { id: 20, collegeName: '广州华商职业学院', name: '会计', plan: 100, minScore: 210, minRank: 82000 },
+      { id: 21, collegeName: '广州华商职业学院', name: '计算机应用技术', plan: 90, minScore: 220, minRank: 76000 },
+    ]);
+  },
+
   logStudy(subject, duration) { /* 学习时长记录占位 */ },
   addError(qId) {
     const errors = this.get('errorBook') || [];
@@ -805,6 +853,8 @@ const CLOUD_TABLES = {
   essayMaterials: { table: 'essay_materials', toRow: (it) => ({ id: it.id, type: it.type, title: it.title, content: it.content, date: it.date }), fromRow: (r) => ({ id: r.id, type: r.type, title: r.title, content: r.content, date: r.date }) },
   policies:       { table: 'policies',        toRow: (it) => ({ id: it.id, title: it.title, content: it.content, date: it.date }), fromRow: (r) => ({ id: r.id, title: r.title, content: r.content, date: r.date }) },
   announcements:  { table: 'announcements',   toRow: (it) => ({ id: it.id, title: it.title, content: it.content, date: it.time }), fromRow: (r) => ({ title: r.title, content: r.content, time: r.date }) },
+  colleges:       { table: 'colleges',        toRow: (it) => ({ id: it.id, name: it.name, property: it.property || '', tuition: it.tuition || '', location: it.location || '' }), fromRow: (r) => ({ id: r.id, name: r.name, property: r.property || '', tuition: r.tuition || '', location: r.location || '' }) },
+  majors:         { table: 'majors',          toRow: (it) => ({ id: it.id, college_name: it.collegeName, name: it.name, plan: it.plan || 0, min_score: it.minScore, min_rank: it.minRank }), fromRow: (r) => ({ id: r.id, collegeName: r.college_name, name: r.name, plan: r.plan || 0, minScore: r.min_score, minRank: r.min_rank }) },
 };
 
 // 云端同步就绪标志：init 完成会话恢复与数据拉取后才置为 true，避免初始化阶段误推送
@@ -853,7 +903,7 @@ const CloudSync = {
 };
 
 // ===== 个人数据云端同步（user_data 通用 JSON 表）=====
-const PERSONAL_KEYS = ['studyPlan', 'errorBook', 'favorites', 'studyStats', 'exam_records', 'essayDrafts'];
+const PERSONAL_KEYS = ['studyPlan', 'errorBook', 'favorites', 'studyStats', 'exam_records', 'essayDrafts', 'favColleges'];
 
 const PersonalSync = {
   _queue: Promise.resolve(),
@@ -1202,6 +1252,10 @@ const App = {
 
         <div class="section-title">🛠️ 实用工具</div>
         <div class="grid-2">
+          <div class="card" style="cursor:pointer;text-align:center" onclick="App.navigateTo('volunteer','志愿参考')">
+            <div style="font-size:28px;margin-bottom:6px">🎓</div>
+            <div style="font-size:14px;font-weight:500">志愿参考工具</div>
+          </div>
           <div class="card" style="cursor:pointer;text-align:center" onclick="App.navigateTo('essay-list','作文素材')">
             <div style="font-size:28px;margin-bottom:6px">📝</div>
             <div style="font-size:14px;font-weight:500">作文素材推送</div>
@@ -1849,6 +1903,31 @@ const App = {
       `;
     },
 
+    // VOLUNTEER REFERENCE (志愿参考)
+    'volunteer': function () {
+      return `
+        <div style="background:#fef2f2;border:1.5px solid var(--danger);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px">
+          <div style="font-size:14px;font-weight:700;color:var(--danger)">⚠️ 本工具仅作参考，正式填报请使用广东省教育考试院官方平台</div>
+        </div>
+        <div class="card">
+          <div class="card-title">🎓 志愿参考工具</div>
+          <div class="card-subtitle">输入你的学考分数和位次，智能生成冲稳保参考院校</div>
+          <div class="form-group"><label class="form-label">你的分数（满分 450）</label><input class="form-input" id="volScore" type="number" placeholder="如：320"></div>
+          <div class="form-group"><label class="form-label">你的位次（可选）</label><input class="form-input" id="volRank" type="number" placeholder="如：35000"></div>
+          <div class="form-group"><label class="form-label">办学性质</label>
+            <div class="filter-row" id="volPropRow">
+              <div class="filter-chip active" onclick="App.volSetProp('全部',this)">全部</div>
+              <div class="filter-chip" onclick="App.volSetProp('公办',this)">公办</div>
+              <div class="filter-chip" onclick="App.volSetProp('民办',this)">民办</div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-lg btn-block" onclick="App.volunteerRecommend()">生成冲稳保参考</button>
+        </div>
+        <div id="volResult" style="margin-top:12px"></div>
+        <div id="volFav" style="margin-top:12px">${this._renderVolFavHtml()}</div>
+      `;
+    },
+
     // ESSAY LIST
     'essay-list': function () {
       const mats = DB.get('essayMaterials');
@@ -2283,6 +2362,8 @@ const App = {
             {icon:'📊',title:'分数线管理',page:'admin-score-lines'},
             {icon:'✏️',title:'作文素材管理',page:'admin-essay'},
             {icon:'📰',title:'政策解读管理',page:'admin-policy'},
+            {icon:'🎓',title:'院校管理',page:'admin-colleges'},
+            {icon:'📚',title:'专业管理',page:'admin-majors'},
           ].map(m => `
             <div class="admin-menu-item" onclick="App.navigateTo('${m.page}','${m.title}')">
               <div class="admin-menu-item-icon">${m.icon}</div>
@@ -2304,6 +2385,8 @@ const App = {
               <option value="words">单词（每行一个）</option>
               <option value="materials">资料（每行一个）</option>
               <option value="scoreLines">分数线（每行一个）</option>
+              <option value="colleges">院校（JSON）</option>
+              <option value="majors">专业（JSON）</option>
             </select>
           </div>
           <div class="form-group"><label class="form-label">格式说明</label>
@@ -2623,6 +2706,102 @@ const App = {
         </div>
       `;
     },
+
+    // ADMIN COLLEGES
+    'admin-colleges': function () {
+      const cs = DB.get('colleges');
+      return `
+        <button class="btn btn-primary btn-block" style="margin-bottom:8px" onclick="App.navigateTo('admin-college-add','新增院校')">+ 新增院校</button>
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">💡 可在「批量导入」里选「院校（JSON）」批量导入</div>
+        ${!cs.length ? '<div class="empty-state"><div class="empty-state-text">暂无院校</div></div>' :
+        `<table class="data-table"><tr><th>名称</th><th>性质</th><th>学费</th><th>所在地</th><th>操作</th></tr>
+        ${cs.map(c => `<tr>
+          <td>${c.name}</td><td>${c.property}</td><td>${c.tuition}</td><td>${c.location}</td>
+          <td><button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-college-edit','编辑院校',${c.id})">编辑</button>
+          <button class="btn btn-sm btn-danger" onclick="App.adminDeleteCollege(${c.id})">删除</button></td>
+        </tr>`).join('')}</table>`}
+      `;
+    },
+
+    'admin-college-add': function () {
+      return `
+        <div class="card">
+          <div class="form-group"><label class="form-label">院校名称</label><input class="form-input" id="acName"></div>
+          <div class="form-group"><label class="form-label">办学性质</label>
+            <select class="form-select" id="acProperty"><option>公办</option><option>民办</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">学费</label><input class="form-input" id="acTuition" placeholder="如：6000元/年"></div>
+          <div class="form-group"><label class="form-label">所在地</label><input class="form-input" id="acLocation" placeholder="如：广州"></div>
+          <button class="btn btn-primary btn-lg" onclick="App.adminAddCollege()">保存</button>
+        </div>
+      `;
+    },
+
+    'admin-college-edit': function (id) {
+      const c = DB.get('colleges').find(x => x.id === id);
+      if (!c) return '<div class="empty-state"><div class="empty-state-text">院校不存在</div></div>';
+      return `
+        <div class="card">
+          <div class="form-group"><label class="form-label">院校名称</label><input class="form-input" id="acNameE" value="${c.name}"></div>
+          <div class="form-group"><label class="form-label">办学性质</label>
+            <select class="form-select" id="acPropertyE"><option ${c.property==='公办'?'selected':''}>公办</option><option ${c.property==='民办'?'selected':''}>民办</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">学费</label><input class="form-input" id="acTuitionE" value="${c.tuition || ''}"></div>
+          <div class="form-group"><label class="form-label">所在地</label><input class="form-input" id="acLocationE" value="${c.location || ''}"></div>
+          <button class="btn btn-primary btn-lg" onclick="App.adminEditCollege(${c.id})">保存</button>
+        </div>
+      `;
+    },
+
+    // ADMIN MAJORS
+    'admin-majors': function () {
+      const ms = DB.get('majors');
+      return `
+        <button class="btn btn-primary btn-block" style="margin-bottom:8px" onclick="App.navigateTo('admin-major-add','新增专业')">+ 新增专业</button>
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">💡 可在「批量导入」里选「专业（JSON）」批量导入</div>
+        ${!ms.length ? '<div class="empty-state"><div class="empty-state-text">暂无专业</div></div>' :
+        `<table class="data-table"><tr><th>院校</th><th>专业</th><th>计划</th><th>最低分</th><th>最低位次</th><th>操作</th></tr>
+        ${ms.map(m => `<tr>
+          <td>${m.collegeName}</td><td>${m.name}</td><td>${m.plan}</td><td>${m.minScore}</td><td>${m.minRank}</td>
+          <td><button class="btn btn-sm btn-outline" onclick="App.navigateTo('admin-major-edit','编辑专业',${m.id})">编辑</button>
+          <button class="btn btn-sm btn-danger" onclick="App.adminDeleteMajor(${m.id})">删除</button></td>
+        </tr>`).join('')}</table>`}
+      `;
+    },
+
+    'admin-major-add': function () {
+      const colleges = DB.get('colleges');
+      return `
+        <div class="card">
+          <div class="form-group"><label class="form-label">所属院校</label>
+            <select class="form-select" id="amjCollege">${colleges.map(c => `<option>${c.name}</option>`).join('')}</select>
+          </div>
+          <div class="form-group"><label class="form-label">专业名称</label><input class="form-input" id="amjName" placeholder="如：计算机应用技术"></div>
+          <div class="form-group"><label class="form-label">招生计划</label><input class="form-input" id="amjPlan" type="number" placeholder="如：120"></div>
+          <div class="form-group"><label class="form-label">往年最低分</label><input class="form-input" id="amjScore" type="number" placeholder="如：320"></div>
+          <div class="form-group"><label class="form-label">最低位次</label><input class="form-input" id="amjRank" type="number" placeholder="如：35000"></div>
+          <button class="btn btn-primary btn-lg" onclick="App.adminAddMajor()">保存</button>
+        </div>
+      `;
+    },
+
+    'admin-major-edit': function (id) {
+      const m = DB.get('majors').find(x => x.id === id);
+      if (!m) return '<div class="empty-state"><div class="empty-state-text">专业不存在</div></div>';
+      const colleges = DB.get('colleges');
+      return `
+        <div class="card">
+          <div class="form-group"><label class="form-label">所属院校</label>
+            <select class="form-select" id="amjCollegeE">${colleges.map(c => `<option ${c.name===m.collegeName?'selected':''}>${c.name}</option>`).join('')}</select>
+          </div>
+          <div class="form-group"><label class="form-label">专业名称</label><input class="form-input" id="amjNameE" value="${m.name}"></div>
+          <div class="form-group"><label class="form-label">招生计划</label><input class="form-input" id="amjPlanE" type="number" value="${m.plan || 0}"></div>
+          <div class="form-group"><label class="form-label">往年最低分</label><input class="form-input" id="amjScoreE" type="number" value="${m.minScore}"></div>
+          <div class="form-group"><label class="form-label">最低位次</label><input class="form-input" id="amjRankE" type="number" value="${m.minRank}"></div>
+          <button class="btn btn-primary btn-lg" onclick="App.adminEditMajor(${m.id})">保存</button>
+        </div>
+      `;
+    },
   },
 
   // ===== HELPERS =====
@@ -2648,6 +2827,111 @@ const App = {
 
   trainWeakPoint(subject, category) {
     App.startQuiz('special', subject, category);
+  },
+
+  // ===== 志愿参考工具 =====
+  volProp: '全部',
+  _volScore: null,
+  _volRank: null,
+
+  volSetProp(p, el) {
+    App.volProp = p;
+    document.querySelectorAll('#volPropRow .filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    if (App._volScore) App._renderVolResult(App._volScore, App._volRank);
+  },
+
+  volunteerRecommend() {
+    const score = parseInt(document.getElementById('volScore').value, 10);
+    const rank = parseInt(document.getElementById('volRank').value, 10);
+    if (isNaN(score) || score <= 0) { App.toast('请输入有效分数'); return; }
+    App._volScore = score;
+    App._volRank = isNaN(rank) ? null : rank;
+    this._renderVolResult(score, isNaN(rank) ? null : rank);
+  },
+
+  _renderVolResult(score, rank) {
+    const resultEl = document.getElementById('volResult');
+    if (!resultEl) return;
+    const prop = App.volProp || '全部';
+    const colleges = DB.get('colleges').filter(c => prop === '全部' || c.property === prop);
+    const majors = DB.get('majors');
+    const groups = colleges.map(c => {
+      const ms = majors.filter(m => m.collegeName === c.name);
+      if (!ms.length) return null;
+      const minScore = Math.min(...ms.map(m => m.minScore));
+      const diff = minScore - score;
+      let cat = '保';
+      if (diff > 0) cat = '冲';
+      else if (diff >= -15) cat = '稳';
+      return { college: c, majors: ms, minScore, diff, cat };
+    }).filter(Boolean);
+
+    const order = { '冲': 0, '稳': 1, '保': 2 };
+    groups.sort((a, b) => order[a.cat] - order[b.cat] || b.minScore - a.minScore);
+
+    const sections = [
+      { key: '冲', label: '🚀 冲刺院校', desc: '录取最低分略高于你的分数，有一定挑战', color: '#ef4444' },
+      { key: '稳', label: '🎯 稳妥院校', desc: '录取最低分与你的分数相当，把握较大', color: '#f59e0b' },
+      { key: '保', label: '🛡️ 保底院校', desc: '录取最低分低于你的分数，基本稳妥', color: '#10b981' },
+    ];
+
+    const html = sections.map(sec => {
+      const list = groups.filter(g => g.cat === sec.key);
+      if (!list.length) return '';
+      return `<div class="card" style="border-left:4px solid ${sec.color}">
+        <div class="card-title" style="color:${sec.color}">${sec.label}</div>
+        <div class="card-subtitle">${sec.desc}</div>
+        ${list.map(g => {
+          const fav = this.isFavCollege(g.college.id);
+          return `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:15px;font-weight:600">${g.college.name}</span>
+              <span class="tag ${g.college.property==='公办'?'tag-blue':'tag-orange'}">${g.college.property}</span>
+              <span style="flex:1"></span>
+              <button class="btn btn-sm ${fav?'btn-primary':'btn-outline'}" onclick="App.toggleFavCollege(${g.college.id},this)">${fav?'⭐ 已收藏':'☆ 收藏'}</button>
+            </div>
+            <div style="font-size:12px;color:var(--text-secondary);margin:4px 0">📍 ${g.college.location} · 学费 ${g.college.tuition || '—'} · 参考最低分 ${g.minScore} 分</div>
+            <div style="font-size:12px;color:var(--text-secondary);line-height:1.7">专业：${g.majors.map(m => `${m.name}(${m.minScore}分/${m.minRank}名)`).join('、')}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+
+    resultEl.innerHTML = html || '<div class="empty-state"><div class="empty-state-icon">🎓</div><div class="empty-state-text">没有符合条件的院校，请调整筛选或检查数据</div></div>';
+  },
+
+  toggleFavCollege(id, btn) {
+    let favs = DB.get('favColleges') || [];
+    const wasFav = favs.includes(id);
+    if (wasFav) favs = favs.filter(x => x !== id); else favs.push(id);
+    DB.set('favColleges', favs);
+    App.toast(wasFav ? '已取消收藏' : '已收藏');
+    if (btn) {
+      btn.textContent = wasFav ? '☆ 收藏' : '⭐ 已收藏';
+      btn.className = 'btn btn-sm ' + (wasFav ? 'btn-outline' : 'btn-primary');
+    }
+    this.renderVolFav();
+    if (App._volScore) this._renderVolResult(App._volScore, App._volRank);
+  },
+
+  isFavCollege(id) { return (DB.get('favColleges') || []).includes(id); },
+
+  renderVolFav() {
+    const el = document.getElementById('volFav');
+    if (el) el.innerHTML = this._renderVolFavHtml();
+  },
+
+  _renderVolFavHtml() {
+    const favList = (DB.get('favColleges') || []).map(id => DB.get('colleges').find(c => c.id === id)).filter(Boolean);
+    if (!favList.length) return '';
+    return `<div class="card"><div class="card-title">⭐ 我的收藏院校（${favList.length}）</div>
+      ${favList.map(c => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;min-width:0"><span style="font-size:14px;font-weight:500">${c.name}</span> <span class="tag ${c.property==='公办'?'tag-blue':'tag-orange'}">${c.property}</span></div>
+        <span style="font-size:12px;color:var(--text-secondary)">${c.location}</span>
+        <button class="btn btn-sm btn-outline" onclick="App.toggleFavCollege(${c.id},this)">取消</button>
+      </div>`).join('')}
+    </div>`;
   },
 
   _planPhase(title, content, color) {
@@ -3414,6 +3698,14 @@ const App = {
       hint: '每行一条分数线，格式：年份,批次,院校,专业,分数,属性,地区。属性为 公办/民办；批次为 常规批/补录批。',
       example: '2025,常规批,深圳职业技术大学,计算机应用技术,384,公办,全省\n2025,常规批,广州城建职业学院,建筑工程技术,255,民办,全省'
     },
+    colleges: {
+      hint: 'JSON 数组格式。字段：name(院校名称)、property(公办/民办)、tuition(学费)、location(所在地)。',
+      example: '[{"name":"深圳职业技术大学","property":"公办","tuition":"6000元/年","location":"深圳"},{"name":"广州城建职业学院","property":"民办","tuition":"18000元/年","location":"广州"}]'
+    },
+    majors: {
+      hint: 'JSON 数组格式。字段：collegeName(院校名称，需已存在)、name(专业名)、plan(招生计划)、minScore(往年最低分)、minRank(最低位次)。',
+      example: '[{"collegeName":"深圳职业技术大学","name":"计算机应用技术","plan":120,"minScore":375,"minRank":12000},{"collegeName":"深圳职业技术大学","name":"电子商务","plan":100,"minScore":360,"minRank":18000}]'
+    },
   },
 
   renderBatchHint() {
@@ -3475,6 +3767,28 @@ const App = {
         count++;
       });
       DB.set('scoreLines', sls);
+    } else if (type === 'colleges') {
+      let arr;
+      try { arr = JSON.parse(content); } catch (e) { App.toast('JSON 格式错误，请检查括号和引号'); return; }
+      if (!Array.isArray(arr)) { App.toast('请粘贴 JSON 数组'); return; }
+      const cs = DB.get('colleges');
+      arr.forEach((c, i) => {
+        if (!c || !c.name) { errors.push('第 ' + (i + 1) + ' 条缺少 name 字段'); return; }
+        cs.push({ id: Date.now() + i, name: String(c.name), property: c.property || '', tuition: c.tuition || '', location: c.location || '' });
+        count++;
+      });
+      DB.set('colleges', cs);
+    } else if (type === 'majors') {
+      let arr;
+      try { arr = JSON.parse(content); } catch (e) { App.toast('JSON 格式错误，请检查括号和引号'); return; }
+      if (!Array.isArray(arr)) { App.toast('请粘贴 JSON 数组'); return; }
+      const ms = DB.get('majors');
+      arr.forEach((m, i) => {
+        if (!m || !m.collegeName || !m.name) { errors.push('第 ' + (i + 1) + ' 条缺少 collegeName/name 字段'); return; }
+        ms.push({ id: Date.now() + i, collegeName: String(m.collegeName), name: String(m.name), plan: parseInt(m.plan) || 0, minScore: parseInt(m.minScore), minRank: parseInt(m.minRank) });
+        count++;
+      });
+      DB.set('majors', ms);
     }
 
     if (count === 0 && errors.length === 0) { App.toast('没有可导入的内容'); return; }
@@ -4030,6 +4344,78 @@ const App = {
   adminDeletePolicy(id) {
     if (!confirm('确定删除？')) return;
     DB.set('policies', DB.get('policies').filter(p => p.id !== id));
+    App.toast('删除成功');
+    App.renderPage(App.currentPage);
+  },
+
+  // ===== 院校管理 =====
+  adminAddCollege() {
+    const name = document.getElementById('acName').value.trim();
+    const property = document.getElementById('acProperty').value;
+    const tuition = document.getElementById('acTuition').value.trim();
+    const location = document.getElementById('acLocation').value.trim();
+    if (!name) { App.toast('请填写院校名称'); return; }
+    const cs = DB.get('colleges');
+    cs.push({ id: Date.now(), name, property, tuition, location });
+    DB.set('colleges', cs);
+    App.toast('新增成功');
+    App.goBack();
+  },
+
+  adminEditCollege(id) {
+    const name = document.getElementById('acNameE').value.trim();
+    const property = document.getElementById('acPropertyE').value;
+    const tuition = document.getElementById('acTuitionE').value.trim();
+    const location = document.getElementById('acLocationE').value.trim();
+    if (!name) { App.toast('请填写院校名称'); return; }
+    const cs = DB.get('colleges');
+    const idx = cs.findIndex(c => c.id === id);
+    if (idx >= 0) Object.assign(cs[idx], { name, property, tuition, location });
+    DB.set('colleges', cs);
+    App.toast('修改成功');
+    App.goBack();
+  },
+
+  adminDeleteCollege(id) {
+    if (!confirm('确定删除该院校？其关联专业不会被删除，但推荐时可能缺失院校信息。')) return;
+    DB.set('colleges', DB.get('colleges').filter(c => c.id !== id));
+    App.toast('删除成功');
+    App.renderPage(App.currentPage);
+  },
+
+  // ===== 专业管理 =====
+  adminAddMajor() {
+    const collegeName = document.getElementById('amjCollege').value;
+    const name = document.getElementById('amjName').value.trim();
+    const plan = parseInt(document.getElementById('amjPlan').value) || 0;
+    const minScore = parseInt(document.getElementById('amjScore').value);
+    const minRank = parseInt(document.getElementById('amjRank').value);
+    if (!collegeName || !name) { App.toast('请填写院校和专业名称'); return; }
+    const ms = DB.get('majors');
+    ms.push({ id: Date.now(), collegeName, name, plan, minScore, minRank });
+    DB.set('majors', ms);
+    App.toast('新增成功');
+    App.goBack();
+  },
+
+  adminEditMajor(id) {
+    const collegeName = document.getElementById('amjCollegeE').value;
+    const name = document.getElementById('amjNameE').value.trim();
+    const plan = parseInt(document.getElementById('amjPlanE').value) || 0;
+    const minScore = parseInt(document.getElementById('amjScoreE').value);
+    const minRank = parseInt(document.getElementById('amjRankE').value);
+    if (!collegeName || !name) { App.toast('请填写院校和专业名称'); return; }
+    const ms = DB.get('majors');
+    const idx = ms.findIndex(m => m.id === id);
+    if (idx >= 0) Object.assign(ms[idx], { collegeName, name, plan, minScore, minRank });
+    DB.set('majors', ms);
+    App.toast('修改成功');
+    App.goBack();
+  },
+
+  adminDeleteMajor(id) {
+    if (!confirm('确定删除该专业？')) return;
+    DB.set('majors', DB.get('majors').filter(m => m.id !== id));
     App.toast('删除成功');
     App.renderPage(App.currentPage);
   },

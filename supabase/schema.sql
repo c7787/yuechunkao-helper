@@ -103,6 +103,27 @@ create table if not exists public.announcements (
   created_at timestamptz default now()
 );
 
+-- 16. 院校（志愿参考）
+create table if not exists public.colleges (
+  id bigint generated always as identity primary key,
+  name text not null,
+  property text,
+  tuition text,
+  location text,
+  created_at timestamptz default now()
+);
+
+-- 17. 专业（志愿参考，关联院校名）
+create table if not exists public.majors (
+  id bigint generated always as identity primary key,
+  college_name text not null,
+  name text not null,
+  plan int default 0,
+  min_score int,
+  min_rank int,
+  created_at timestamptz default now()
+);
+
 -- 11. 学习计划（按用户）
 create table if not exists public.study_plans (
   id bigint generated always as identity primary key,
@@ -180,6 +201,8 @@ alter table public.essay_materials enable row level security;
 alter table public.policies enable row level security;
 alter table public.materials enable row level security;
 alter table public.announcements enable row level security;
+alter table public.colleges enable row level security;
+alter table public.majors enable row level security;
 alter table public.study_plans enable row level security;
 alter table public.error_book enable row level security;
 alter table public.favorites enable row level security;
@@ -237,6 +260,18 @@ create policy "announcements_read" on public.announcements for select using (tru
 create policy "announcements_admin_insert" on public.announcements for insert with check (public.is_admin());
 create policy "announcements_admin_update" on public.announcements for update using (public.is_admin());
 create policy "announcements_admin_delete" on public.announcements for delete using (public.is_admin());
+
+-- colleges
+create policy "colleges_read" on public.colleges for select using (true);
+create policy "colleges_admin_insert" on public.colleges for insert with check (public.is_admin());
+create policy "colleges_admin_update" on public.colleges for update using (public.is_admin());
+create policy "colleges_admin_delete" on public.colleges for delete using (public.is_admin());
+
+-- majors
+create policy "majors_read" on public.majors for select using (true);
+create policy "majors_admin_insert" on public.majors for insert with check (public.is_admin());
+create policy "majors_admin_update" on public.majors for update using (public.is_admin());
+create policy "majors_admin_delete" on public.majors for delete using (public.is_admin());
 
 -- ============================================================
 -- 用户资料表策略
